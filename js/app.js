@@ -302,44 +302,6 @@ function setupLayers() {
     }
   }).addTo(AppState.map);
 
-  // 2. LIMITES DOS 33 BAIRROS (CADA BAIRRO COM UMA COR DIFERENTE)
-  AppState.layers['bairros'] = L.geoJSON(AppState.data.bairros, {
-    style: (feature) => {
-      const p = feature.properties;
-      const bColor = getBairroColor(p.pasta || p.nome);
-      return {
-        color: bColor,
-        weight: 3,
-        dashArray: '5, 4',
-        fillColor: bColor,
-        fillOpacity: 0.15
-      };
-    },
-    onEachFeature: (feat, layer) => {
-      const p = feat.properties;
-      const bColor = getBairroColor(p.pasta || p.nome);
-      layer.bindTooltip(`
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="display:inline-block;width:12px;height:12px;background:${bColor};border-radius:3px;"></span>
-          <b style="color:${bColor};font-size:0.9rem;">Bairro ${p.nome}</b>
-        </div>
-        <div style="font-size:0.75rem;margin-top:2px;">
-          Lotes: <b>${p.lotes}</b> &bull; Edificações: <b>${p.edificacoes}</b>
-        </div>
-      `, { sticky: true });
-
-      layer.on('click', (e) => {
-        L.DomEvent.stopPropagation(e);
-        if (AppState.streetView && AppState.streetView.active) {
-          openStreetView(e.latlng.lat, e.latlng.lng);
-          return;
-        }
-        openGenericPopup(feat, layer, `Bairro ${p.nome}`);
-        AppState.map.fitBounds(layer.getBounds(), { padding: [30, 30] });
-      });
-    }
-  });
-
   // 3. LOTES CADASTRAIS (TODOS OS LOTES NAS CORES CORRESPONDENTES DO BAIRRO)
   AppState.layers['lotes'] = L.geoJSON(AppState.data.lotes, {
     style: (feature) => {
@@ -971,12 +933,17 @@ function renderBairrosLegend() {
 }
 
 window.zoomToBairroByFolder = function(folder) {
-  if (!AppState.layers['bairros']) return;
-  AppState.layers['bairros'].eachLayer(l => {
-    if (l.feature.properties.pasta === folder) {
-      AppState.map.fitBounds(l.getBounds(), { padding: [40, 40] });
+  if (AppState.layers['lotes']) {
+    const bGroup = L.featureGroup();
+    AppState.layers['lotes'].eachLayer(l => {
+      if (l.feature && l.feature.properties && l.feature.properties.bairro_pasta === folder) {
+        bGroup.addLayer(l);
+      }
+    });
+    if (bGroup.getLayers().length > 0) {
+      AppState.map.fitBounds(bGroup.getBounds(), { padding: [40, 40] });
     }
-  });
+  }
 };
 
 /* ==========================================================
@@ -1018,12 +985,16 @@ function populateMetadataUI(meta) {
       }
 
       let foundBounds = null;
-      if (AppState.layers['bairros']) {
-        AppState.layers['bairros'].eachLayer(l => {
-          if (l.feature.properties.pasta === selectedFolder) {
-            foundBounds = l.getBounds();
+      if (AppState.layers['lotes']) {
+        const bGroup = L.featureGroup();
+        AppState.layers['lotes'].eachLayer(l => {
+          if (l.feature && l.feature.properties && l.feature.properties.bairro_pasta === selectedFolder) {
+            bGroup.addLayer(l);
           }
         });
+        if (bGroup.getLayers().length > 0) {
+          foundBounds = bGroup.getBounds();
+        }
       }
 
       if (foundBounds) {
