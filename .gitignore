@@ -1,0 +1,11 @@
+﻿# Python cache
+__pycache__/
+*.py[cod]
+*.class
+
+# OS and Temp
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp

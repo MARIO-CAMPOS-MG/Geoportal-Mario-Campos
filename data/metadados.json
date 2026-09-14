@@ -1,0 +1,315 @@
+{
+  "titulo": "Geoportal Mário Campos - Cadastro Técnico Imobiliário 2023",
+  "municipio": "Mário Campos",
+  "estado": "Minas Gerais",
+  "ano_base": "2023",
+  "crs_nativo": "SIRGAS 2000 / UTM zone 23S (EPSG:31983)",
+  "crs_web": "WGS 84 (EPSG:4326)",
+  "total_bairros": 33,
+  "total_lotes": 6465,
+  "total_edificacoes": 1541,
+  "total_edificacoes_projetadas": 8600,
+  "area_edificacoes_projetadas_m2": 1136990.87,
+  "total_quadras": 290,
+  "total_vias": 645,
+  "total_area_cadastrada_m2": 8336747.44,
+  "bairros": [
+    {
+      "codigo": "01",
+      "pasta": "01_JARDIM_PRIMAVERA",
+      "nome": "Jardim Primavera",
+      "lotes": 461,
+      "edificacoes": 173,
+      "quadras": 34,
+      "area_cadastrada_m2": 295048.36
+    },
+    {
+      "codigo": "02",
+      "pasta": "02_CENTRO",
+      "nome": "Centro",
+      "lotes": 22,
+      "edificacoes": 0,
+      "quadras": 0,
+      "area_cadastrada_m2": 18694.72
+    },
+    {
+      "codigo": "03",
+      "pasta": "03_SAO_TARCISIO",
+      "nome": "Sao Tarcisio",
+      "lotes": 409,
+      "edificacoes": 43,
+      "quadras": 18,
+      "area_cadastrada_m2": 161173.1
+    },
+    {
+      "codigo": "04",
+      "pasta": "04_VILA_TANIA",
+      "nome": "Vila Tania",
+      "lotes": 86,
+      "edificacoes": 13,
+      "quadras": 9,
+      "area_cadastrada_m2": 49230.48
+    },
+    {
+      "codigo": "05",
+      "pasta": "05_VILA_MARIO_CAMPOS",
+      "nome": "Vila Mario Campos",
+      "lotes": 297,
+      "edificacoes": 19,
+      "quadras": 18,
+      "area_cadastrada_m2": 107198.15
+    },
+    {
+      "codigo": "06",
+      "pasta": "06_VILA_PRIMAVERA",
+      "nome": "Vila Primavera",
+      "lotes": 32,
+      "edificacoes": 0,
+      "quadras": 0,
+      "area_cadastrada_m2": 7398.17
+    },
+    {
+      "codigo": "07",
+      "pasta": "07_VILA_ENY",
+      "nome": "Vila Eny",
+      "lotes": 65,
+      "edificacoes": 7,
+      "quadras": 5,
+      "area_cadastrada_m2": 23076.46
+    },
+    {
+      "codigo": "08",
+      "pasta": "08_VILA_LOURDES",
+      "nome": "Vila Lourdes",
+      "lotes": 127,
+      "edificacoes": 18,
+      "quadras": 10,
+      "area_cadastrada_m2": 74500.83
+    },
+    {
+      "codigo": "09",
+      "pasta": "09_VILA_ONDINA",
+      "nome": "Vila Ondina",
+      "lotes": 385,
+      "edificacoes": 84,
+      "quadras": 27,
+      "area_cadastrada_m2": 138323.06
+    },
+    {
+      "codigo": "10",
+      "pasta": "10_RETA_DO_JACARE",
+      "nome": "Reta Do Jacare",
+      "lotes": 249,
+      "edificacoes": 16,
+      "quadras": 0,
+      "area_cadastrada_m2": 1332411.42
+    },
+    {
+      "codigo": "11",
+      "pasta": "11_CAMPO_VERDE",
+      "nome": "Campo Verde",
+      "lotes": 521,
+      "edificacoes": 27,
+      "quadras": 31,
+      "area_cadastrada_m2": 180305.83
+    },
+    {
+      "codigo": "12",
+      "pasta": "12_CHACARAS_MARIA_ANTONIETA",
+      "nome": "Chacaras Maria Antonieta",
+      "lotes": 373,
+      "edificacoes": 40,
+      "quadras": 13,
+      "area_cadastrada_m2": 267997.94
+    },
+    {
+      "codigo": "13",
+      "pasta": "13_ANEXO_MARIA_ANTONIETA",
+      "nome": "Anexo Maria Antonieta",
+      "lotes": 28,
+      "edificacoes": 16,
+      "quadras": 4,
+      "area_cadastrada_m2": 34121.41
+    },
+    {
+      "codigo": "14",
+      "pasta": "14_RESIDENCIAL_MARIA_ANTONIETA",
+      "nome": "Residencial Maria Antonieta",
+      "lotes": 137,
+      "edificacoes": 47,
+      "quadras": 8,
+      "area_cadastrada_m2": 45700.64
+    },
+    {
+      "codigo": "15",
+      "pasta": "15_SERRA_DOS_BANDEIRANTES",
+      "nome": "Serra Dos Bandeirantes",
+      "lotes": 503,
+      "edificacoes": 366,
+      "quadras": 23,
+      "area_cadastrada_m2": 517972.78
+    },
+    {
+      "codigo": "16",
+      "pasta": "16_SAO_RAFAEL",
+      "nome": "Sao Rafael",
+      "lotes": 27,
+      "edificacoes": 0,
+      "quadras": 2,
+      "area_cadastrada_m2": 12498.66
+    },
+    {
+      "codigo": "17",
+      "pasta": "17_BOM_JARDIM",
+      "nome": "Bom Jardim",
+      "lotes": 358,
+      "edificacoes": 47,
+      "quadras": 0,
+      "area_cadastrada_m2": 1988962.71
+    },
+    {
+      "codigo": "18",
+      "pasta": "18_BELA VISTA",
+      "nome": "Bela Vista",
+      "lotes": 535,
+      "edificacoes": 203,
+      "quadras": 23,
+      "area_cadastrada_m2": 172941.0
+    },
+    {
+      "codigo": "19",
+      "pasta": "19_CHACARAS_BOM_JARDIM",
+      "nome": "Chacaras Bom Jardim",
+      "lotes": 45,
+      "edificacoes": 9,
+      "quadras": 4,
+      "area_cadastrada_m2": 274523.49
+    },
+    {
+      "codigo": "20",
+      "pasta": "20_CHACARAS_JOAQUINA_MARIA",
+      "nome": "Chacaras Joaquina Maria",
+      "lotes": 9,
+      "edificacoes": 0,
+      "quadras": 2,
+      "area_cadastrada_m2": 22717.98
+    },
+    {
+      "codigo": "21",
+      "pasta": "21_DAS_PALMEIRAS",
+      "nome": "Das Palmeiras",
+      "lotes": 78,
+      "edificacoes": 4,
+      "quadras": 3,
+      "area_cadastrada_m2": 162803.24
+    },
+    {
+      "codigo": "22",
+      "pasta": "22_TANGARA",
+      "nome": "Tangara",
+      "lotes": 559,
+      "edificacoes": 86,
+      "quadras": 21,
+      "area_cadastrada_m2": 224029.43
+    },
+    {
+      "codigo": "23",
+      "pasta": "23_CHACARAS_RECANTO_DO_BOM_JARDIM",
+      "nome": "Chacaras Recanto Do Bom Jardim",
+      "lotes": 56,
+      "edificacoes": 1,
+      "quadras": 4,
+      "area_cadastrada_m2": 78706.61
+    },
+    {
+      "codigo": "24",
+      "pasta": "24_ESTANCIAS_SERRA_VERDE",
+      "nome": "Estancias Serra Verde",
+      "lotes": 26,
+      "edificacoes": 0,
+      "quadras": 6,
+      "area_cadastrada_m2": 21178.9
+    },
+    {
+      "codigo": "25",
+      "pasta": "25_AREAS_DO_PARAOPEBA",
+      "nome": "Areas Do Paraopeba",
+      "lotes": 32,
+      "edificacoes": 0,
+      "quadras": 0,
+      "area_cadastrada_m2": 104496.71
+    },
+    {
+      "codigo": "26",
+      "pasta": "26_CHACARAS_RECANTO_DO_FUNIL",
+      "nome": "Chacaras Recanto Do Funil",
+      "lotes": 30,
+      "edificacoes": 0,
+      "quadras": 2,
+      "area_cadastrada_m2": 45098.16
+    },
+    {
+      "codigo": "27",
+      "pasta": "27_VILA_DAS_AMOREIRAS",
+      "nome": "Vila Das Amoreiras",
+      "lotes": 293,
+      "edificacoes": 63,
+      "quadras": 10,
+      "area_cadastrada_m2": 108781.17
+    },
+    {
+      "codigo": "28",
+      "pasta": "28_FECHO_DO_FUNIL",
+      "nome": "Fecho Do Funil",
+      "lotes": 198,
+      "edificacoes": 4,
+      "quadras": 0,
+      "area_cadastrada_m2": 1363696.64
+    },
+    {
+      "codigo": "29",
+      "pasta": "29_CAMPO_BELO",
+      "nome": "Campo Belo",
+      "lotes": 112,
+      "edificacoes": 0,
+      "quadras": 0,
+      "area_cadastrada_m2": 1.14
+    },
+    {
+      "codigo": "30",
+      "pasta": "30_BAMBUI",
+      "nome": "Bambui",
+      "lotes": 20,
+      "edificacoes": 5,
+      "quadras": 0,
+      "area_cadastrada_m2": 17502.8
+    },
+    {
+      "codigo": "31",
+      "pasta": "31_BALNEARIO_ESTANCIAS_DO_BOM_JARDIM",
+      "nome": "Balneario Estancias Do Bom Jardim",
+      "lotes": 318,
+      "edificacoes": 250,
+      "quadras": 13,
+      "area_cadastrada_m2": 485655.45
+    },
+    {
+      "codigo": "32",
+      "pasta": "32_VILLA_DA_SERRA",
+      "nome": "Villa Da Serra",
+      "lotes": 50,
+      "edificacoes": 0,
+      "quadras": 0,
+      "area_cadastrada_m2": 0.0
+    },
+    {
+      "codigo": "33",
+      "pasta": "33_GARCIAS",
+      "nome": "Garcias",
+      "lotes": 24,
+      "edificacoes": 0,
+      "quadras": 0,
+      "area_cadastrada_m2": 0.0
+    }
+  ]
+}

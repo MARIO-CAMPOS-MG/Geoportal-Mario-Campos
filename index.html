@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geoportal Mário Campos | Cadastro Técnico Imobiliário 2026</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6.5 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Leaflet 1.9.4 CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- =======================================================
+       CABEÇALHO INSTITUCIONAL
+       ======================================================= -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">
+        <i class="fa-solid fa-map-location-dot"></i>
+      </div>
+      <div class="header-titles">
+        <h1>
+          Geoportal Mário Campos
+          <span class="badge-year">CTI 2026</span>
+        </h1>
+        <p>Prefeitura Municipal &bull; Divisão de Tributação, Fiscalização e Cadastro</p>
+      </div>
+    </div>
+
+    <!-- Indicadores no Topo -->
+    <div class="header-stats">
+      <div class="stat-pill">
+        <span class="stat-pill-label">Total de Lotes</span>
+        <span class="stat-pill-value" id="header-stat-lotes">...</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-pill-label">Edificações</span>
+        <span class="stat-pill-value" id="header-stat-edif">...</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-pill-label">Vias Mapeadas</span>
+        <span class="stat-pill-value" id="header-stat-vias">...</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-pill-label">Bairros</span>
+        <span class="stat-pill-value" id="header-stat-bairros">33</span>
+      </div>
+    </div>
+
+    <!-- Ações do Cabeçalho -->
+    <div class="header-actions">
+      <button class="header-btn" id="btn-header-about" title="Sobre o Geoportal">
+        <i class="fa-solid fa-circle-info"></i> Sobre
+      </button>
+      <button class="header-btn primary" onclick="window.print()" title="Imprimir visualização">
+        <i class="fa-solid fa-print"></i> Exportar
+      </button>
+    </div>
+  </header>
+
+  <!-- =======================================================
+       CORPO PRINCIPAL (SIDEBAR + MAPA)
+       ======================================================= -->
+  <div class="main-wrapper">
+
+    <!-- SIDEBAR RETRÁTIL -->
+    <aside class="sidebar" id="sidebar">
+      <button class="sidebar-toggle-btn" id="sidebar-toggle" title="Recolher/Expandir Painel">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+
+      <!-- Navegação por Abas -->
+      <nav class="sidebar-tabs">
+        <button class="tab-btn active" data-tab="tab-layers">
+          <i class="fa-solid fa-layer-group"></i> Camadas
+        </button>
+        <button class="tab-btn" data-tab="tab-search">
+          <i class="fa-solid fa-magnifying-glass"></i> Consulta
+        </button>
+        <button class="tab-btn" data-tab="tab-table">
+          <i class="fa-solid fa-table-list"></i> Tabela
+        </button>
+        <button class="tab-btn" data-tab="tab-legend">
+          <i class="fa-solid fa-palette"></i> Legenda
+        </button>
+        <button class="tab-btn" data-tab="tab-stats">
+          <i class="fa-solid fa-chart-pie"></i> Painel
+        </button>
+      </nav>
+
+      <!-- Conteúdo das Abas -->
+      <div class="sidebar-content">
+
+        <!-- ABA 1: GERENCIADOR DE CAMADAS -->
+        <div class="tab-pane active" id="tab-layers">
+          <div class="layer-section-title">
+            <span>Estrutura Cadastral</span>
+            <span style="font-size:0.7rem;color:#94a3b8;">Visibilidade e Opacidade</span>
+          </div>
+
+          <!-- GRUPO: CADASTRO IMOBILIÁRIO -->
+          <div class="layer-group">
+            <div class="layer-group-header">
+              <div class="layer-group-title">
+                <i class="fa-solid fa-vector-square" style="color:#2563eb;"></i>
+                <span>Cadastro Imobiliário</span>
+              </div>
+            </div>
+            <div class="layer-group-body">
+              <!-- Lotes -->
+              <div class="layer-item">
+                <div class="layer-item-top">
+                  <label class="layer-label">
+                    <input type="checkbox" class="layer-checkbox" data-layer="lotes" checked>
+                    <span class="layer-swatch" style="background:linear-gradient(135deg, #1d4ed8, #ea580c, #15803d, #7e22ce);border:1px solid #1e293b;"></span>
+                    <span>Lotes (Cores por Bairro)</span>
+                  </label>
+                  <span class="layer-count-badge">6.440</span>
+                  <button class="btn-zoom-layer" data-layer="lotes" title="Aproximar para a camada"><i class="fa-solid fa-expand"></i></button>
+                </div>
+                <div class="layer-controls">
+                  <div class="opacity-slider-wrapper">
+                    <input type="range" class="opacity-slider" data-layer="lotes" min="0" max="100" value="80">
+                    <span>80%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Edificações Projetadas (Satélite) -->
+              <div class="layer-item">
+                <div class="layer-item-top">
+                  <label class="layer-label">
+                    <input type="checkbox" class="layer-checkbox" data-layer="edificacoes_projetadas">
+                    <span class="layer-swatch" style="background:#f97316;border:1px solid #c2410c;"></span>
+                    <span style="font-weight:600;color:#c2410c;">Edificações Projetadas</span>
+                  </label>
+                  <span class="layer-count-badge" id="badge-edificacoes-projetadas">8.600</span>
+                  <button class="btn-zoom-layer" data-layer="edificacoes_projetadas" title="Aproximar para a camada"><i class="fa-solid fa-expand"></i></button>
+                </div>
+                <div class="layer-controls">
+                  <div class="opacity-slider-wrapper">
+                    <input type="range" class="opacity-slider" data-layer="edificacoes_projetadas" min="0" max="100" value="85">
+                    <span>85%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Edificações Cadastrais (Manchas) -->
+              <div class="layer-item">
+                <div class="layer-item-top">
+                  <label class="layer-label">
+                    <input type="checkbox" class="layer-checkbox" data-layer="edificacoes">
+                    <span class="layer-swatch" style="background:#64748b;"></span>
+                    <span>Edificações (Manchas)</span>
+                  </label>
+                  <span class="layer-count-badge">1.502</span>
+                  <button class="btn-zoom-layer" data-layer="edificacoes" title="Aproximar para a camada"><i class="fa-solid fa-expand"></i></button>
+                </div>
+                <div class="layer-controls">
+                  <div class="opacity-slider-wrapper">
+                    <input type="range" class="opacity-slider" data-layer="edificacoes" min="0" max="100" value="85">
+                    <span>85%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quadras -->
+              <div class="layer-item">
+                <div class="layer-item-top">
+                  <label class="layer-label">
+                    <input type="checkbox" class="layer-checkbox" data-layer="quadras">
+                    <span class="layer-swatch" style="background:#818cf8;border-style:dashed;"></span>
+                    <span>Quadras Urbanas</span>
+                  </label>
+                  <span class="layer-count-badge">290</span>
+                  <button class="btn-zoom-layer" data-layer="quadras" title="Aproximar para a camada"><i class="fa-solid fa-expand"></i></button>
+                </div>
+                <div class="layer-controls">
+                  <div class="opacity-slider-wrapper">
+                    <input type="range" class="opacity-slider" data-layer="quadras" min="0" max="100" value="70">
+                    <span>70%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GRUPO: LIMITES E BAIRROS -->
+          <div class="layer-group">
+            <div class="layer-group-header">
+              <div class="layer-group-title">
+                <i class="fa-solid fa-landmark" style="color:#0284c7;"></i>
+                <span>Limites Territoriais</span>
+              </div>
+            </div>
+            <div class="layer-group-body">
+              <!-- Limite Municipal -->
+              <div class="layer-item">
+                <div class="layer-item-top">
+                  <label class="layer-label">
+                    <input type="checkbox" class="layer-checkbox" data-layer="limite" checked>
+                    <span class="layer-swatch" style="background:rgba(239,68,68,0.2);border:2.5px dashed #dc2626;"></span>
+                    <span style="font-weight:600;color:#dc2626;">Limite Municipal (Vermelho)</span>
+                  </label>
+                  <button class="btn-zoom-layer" data-layer="limite" title="Aproximar"><i class="fa-solid fa-expand"></i></button>
+                </div>
+              </div>
+
+              <!-- Bairros -->
+              <div class="layer-item">
+                <div class="layer-item-top">
+                  <label class="layer-label">
+                    <input type="checkbox" class="layer-checkbox" data-layer="bairros">
+                    <span class="layer-swatch" style="background:rgba(56,189,248,0.2);border:1px dashed #0284c7;"></span>
+                    <span>Delimitação dos 33 Bairros</span>
+                  </label>
+                  <span class="layer-count-badge">33</span>
+                  <button class="btn-zoom-layer" data-layer="bairros" title="Aproximar"><i class="fa-solid fa-expand"></i></button>
+                </div>
+                <div class="layer-controls">
+                  <div class="opacity-slider-wrapper">
+                    <input type="range" class="opacity-slider" data-layer="bairros" min="0" max="100" value="60">
+                    <span>60%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GRUPO: INFRAESTRUTURA & MEIO AMBIENTE -->
+          <div class="layer-group">
+            <div class="layer-group-header">
+              <div class="layer-group-title">
+                <i class="fa-solid fa-road" style="color:#475569;"></i>
+                <span>Infraestrutura & Recursos Naturais</span>
+              </div>
+            </div>
+            <div class="layer-group-body">
+              <!-- Vias -->
+              <div class="layer-item">
+                <div class="layer-item-top">
+                  <label class="layer-label">
+                    <input type="checkbox" class="layer-checkbox" data-layer="vias">
+                    <span class="layer-swatch" style="background:#475569;height:4px;margin-top:5px;"></span>
+                    <span>Sistema Viário (Ruas e Avenidas)</span>
+                  </label>
+                  <span class="layer-count-badge">645</span>
+                </div>
+                <div class="layer-controls">
+                  <div class="opacity-slider-wrapper">
+                    <input type="range" class="opacity-slider" data-layer="vias" min="0" max="100" value="85">
+                    <span>85%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hidrografia -->
+              <div class="layer-item">
+                <div class="layer-item-top">
+                  <label class="layer-label">
+                    <input type="checkbox" class="layer-checkbox" data-layer="hidrografia">
+                    <span class="layer-swatch" style="background:#0284c7;height:4px;margin-top:5px;"></span>
+                    <span>Recursos Hídricos (Rios e Córregos)</span>
+                  </label>
+                  <span class="layer-count-badge">21</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 2: CONSULTA & BUSCA CADASTRAL -->
+        <div class="tab-pane" id="tab-search">
+          <div class="search-box-container">
+            <div style="background:#f8fafc;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;box-shadow:var(--shadow-sm);">
+              
+              <!-- Campo: Bairro -->
+              <div class="search-form-group">
+                <label class="search-form-label" for="search-bairro">
+                  <i class="fa-solid fa-location-dot" style="color:#0284c7;"></i> Bairro:
+                </label>
+                <select id="search-bairro" class="search-field-input" style="font-size:0.83rem;">
+                  <option value="">-- Todos os 33 Bairros --</option>
+                </select>
+              </div>
+
+              <!-- Linha Dupla: Quadra e Lote -->
+              <div class="search-form-row">
+                <div class="search-form-group" style="margin-bottom:0;">
+                  <label class="search-form-label" for="search-quadra">
+                    <i class="fa-solid fa-square" style="color:#6366f1;"></i> Quadra:
+                  </label>
+                  <input type="text" id="search-quadra" class="search-field-input" placeholder="Ex: 15 ou 000015" autocomplete="off">
+                </div>
+                <div class="search-form-group" style="margin-bottom:0;">
+                  <label class="search-form-label" for="search-lote">
+                    <i class="fa-solid fa-vector-square" style="color:#2563eb;"></i> Lote:
+                  </label>
+                  <input type="text" id="search-lote" class="search-field-input" placeholder="Ex: 6 ou 000006" autocomplete="off">
+                </div>
+              </div>
+
+              <!-- Campo: Inscrição Imobiliária / Titular (Busca Geral) -->
+              <div class="search-form-group" style="margin-top:10px;">
+                <label class="search-form-label" for="search-geral">
+                  <i class="fa-solid fa-barcode" style="color:#475569;"></i> Inscrição Imob. ou Titular:
+                </label>
+                <input type="text" id="search-geral" class="search-field-input" placeholder="Ex: 001.001... ou nome do titular" autocomplete="off">
+              </div>
+
+              <!-- Botões de Ação -->
+              <div class="search-actions-row">
+                <button id="btn-do-search" class="btn-search-action primary" type="button">
+                  <i class="fa-solid fa-magnifying-glass"></i> Consultar
+                </button>
+                <button id="btn-clear-search" class="btn-search-action secondary" type="button">
+                  <i class="fa-solid fa-rotate-left"></i> Limpar
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Status / Contador de Resultados -->
+          <div class="layer-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Resultados da Consulta</span>
+            <span id="search-count-badge" style="font-size:0.7rem;background:#e2e8f0;padding:2px 8px;border-radius:999px;font-weight:600;display:none;">0 encontrados</span>
+          </div>
+
+          <div class="search-results-container" id="search-results">
+            <div style="text-align:center;color:#94a3b8;padding:30px 10px;font-size:0.8rem;">
+              <i class="fa-solid fa-search" style="font-size:1.8rem;margin-bottom:10px;opacity:0.4;"></i><br>
+              Preencha o <b>Bairro</b>, <b>Quadra</b> e/ou <b>Lote</b> acima e clique em <b>Consultar</b> para localizar o imóvel.
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 3: TABELA DE ATRIBUTOS -->
+        <div class="tab-pane" id="tab-table">
+          <div class="table-toolbar">
+            <input type="text" id="table-search" class="filter-select" style="max-width:200px;" placeholder="Filtrar tabela...">
+            <button class="btn-export-csv" id="btn-export-csv">
+              <i class="fa-solid fa-file-excel"></i> Exportar CSV
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Inscrição Imob.</th>
+                  <th>Bairro</th>
+                  <th>Quadra</th>
+                  <th>Lote</th>
+                  <th>Área</th>
+                  <th>Zoneamento</th>
+                  <th>Titular</th>
+                </tr>
+              </thead>
+              <tbody id="attribute-table-body">
+                <!-- Preenchido via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-pagination">
+            <span id="table-page-info">Página 1</span>
+            <div style="display:flex;gap:6px;">
+              <button class="pagination-btn" id="table-prev-page"><i class="fa-solid fa-arrow-left"></i></button>
+              <button class="pagination-btn" id="table-next-page"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 4: LEGENDA DINÂMICA -->
+        <div class="tab-pane" id="tab-legend">
+          <div class="layer-section-title">Limites Territoriais</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.82rem;">
+              <span class="layer-swatch" style="background:rgba(239,68,68,0.25);border:2.5px dashed #dc2626;width:18px;height:18px;"></span>
+              <span style="font-weight:700;color:#dc2626;">Limite Municipal Oficial (Vermelho)</span>
+            </div>
+          </div>
+
+          <div class="layer-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Cores dos 33 Bairros &amp; Lotes</span>
+            <span style="font-size:0.65rem;color:#64748b;">Clique para aproximar</span>
+          </div>
+          <p style="font-size:0.72rem;color:#64748b;margin-bottom:8px;">Cada bairro e seus respectivos lotes compartilham a mesma identidade de cor:</p>
+          <div id="bairros-legend-list" style="display:flex;flex-direction:column;gap:3px;max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px;background:#ffffff;margin-bottom:16px;">
+            <!-- Preenchido dinamicamente pelo JavaScript com os 33 bairros -->
+          </div>
+
+          <div class="layer-section-title">Zoneamento Urbano</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#3b82f6;"></span>
+              <span>Zona Predominantemente Residencial</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#10b981;"></span>
+              <span>Zona de Expansão Urbana</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#f59e0b;"></span>
+              <span>Zona Comercial</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#8b5cf6;"></span>
+              <span>Zona Industrial</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#84cc16;"></span>
+              <span>Zona Rural</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#06b6d4;"></span>
+              <span>Área de Preservação / Proteção</span>
+            </div>
+          </div>
+
+          <div class="layer-section-title">Elementos Cadastrais &amp; Redes</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#f97316;border:1px solid #c2410c;"></span>
+              <span style="font-weight:600;color:#c2410c;">Edificações Projetadas (Satélite)</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#64748b;"></span>
+              <span>Edificações Cadastrais Mapeadas</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:transparent;border:2px dashed #4f46e5;"></span>
+              <span>Quadras Urbanas</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#475569;height:4px;"></span>
+              <span>Vias e Logradouros</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;">
+              <span class="layer-swatch" style="background:#0284c7;height:4px;"></span>
+              <span>Recursos Hídricos (Rios / Córregos)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 5: PAINEL DE ESTATÍSTICAS (DASHBOARD) -->
+        <div class="tab-pane" id="tab-stats">
+          <div class="dashboard-grid">
+            <div class="dash-card">
+              <div class="dash-card-title">Área Cadastrada</div>
+              <div class="dash-card-value" style="font-size:1.1rem;color:#2563eb;">8,34 km²</div>
+            </div>
+            <div class="dash-card">
+              <div class="dash-card-title">Município</div>
+              <div class="dash-card-value" style="font-size:1.1rem;">35,2 km²</div>
+            </div>
+            <div class="dash-card">
+              <div class="dash-card-title">Edificações Projetadas</div>
+              <div class="dash-card-value" style="font-size:1.1rem;color:#ea580c;">8.600 un.</div>
+            </div>
+            <div class="dash-card">
+              <div class="dash-card-title">Área Projeção Satélite</div>
+              <div class="dash-card-value" style="font-size:1.1rem;color:#ea580c;">1,14 km²</div>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <div class="chart-title"><i class="fa-solid fa-chart-column" style="color:#3b82f6;"></i> Top 10 Bairros com Mais Lotes</div>
+            <div style="height:220px;position:relative;">
+              <canvas id="chart-bairros"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <div class="chart-title"><i class="fa-solid fa-chart-pie" style="color:#10b981;"></i> Distribuição por Zoneamento</div>
+            <div style="height:220px;position:relative;">
+              <canvas id="chart-zoneamento"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ÁREA DO MAPA -->
+    <main class="map-container">
+      <div id="map"></div>
+
+      <!-- SELETOR DOS 3 MAPAS DE FUNDO -->
+      <div class="basemap-switcher" id="basemap-switcher">
+        <!-- 1. Satélite -->
+        <div class="basemap-option active" data-base="satellite" title="Satélite de Alta Resolução">
+          <div class="basemap-thumb" style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/14/9082/6182');"></div>
+          <span class="basemap-name">Satélite</span>
+        </div>
+        <!-- 2. OpenStreetMap -->
+        <div class="basemap-option" data-base="osm" title="OpenStreetMap Padrão">
+          <div class="basemap-thumb" style="background-image: url('https://tile.openstreetmap.org/14/6182/9082.png');"></div>
+          <span class="basemap-name">Cartografia</span>
+        </div>
+        <!-- 3. CartoDB Positron -->
+        <div class="basemap-option" data-base="positron" title="CartoDB Positron (Mapa Claro / Alto Contraste)">
+          <div class="basemap-thumb" style="background-image: url('https://a.basemaps.cartocdn.com/light_all/14/6182/9082.png');"></div>
+          <span class="basemap-name">Claro</span>
+        </div>
+      </div>
+
+      <!-- SALTO RÁPIDO PARA BAIRRO -->
+      <div class="bairro-jumper">
+        <i class="fa-solid fa-location-crosshairs" style="color:#0284c7;"></i>
+        <label for="bairro-jumper-select">Ir para Bairro:</label>
+        <select id="bairro-jumper-select" class="bairro-select">
+          <option value="">Mário Campos (Visão Geral)</option>
+        </select>
+      </div>
+
+      <!-- BARRA FLUTUANTE DE FERRAMENTAS GIS -->
+      <div class="map-toolbar">
+        <button class="tool-btn" id="tool-home" data-tooltip="Visão Geral (Mário Campos)">
+          <i class="fa-solid fa-house"></i>
+        </button>
+        <button class="tool-btn" id="tool-locate" data-tooltip="Minha Localização (GPS)">
+          <i class="fa-solid fa-location-arrow"></i>
+        </button>
+        <button class="tool-btn" id="tool-measure-distance" onclick="toggleMeasureTool('distance')" data-tooltip="Medir Distância (m/km)">
+          <i class="fa-solid fa-ruler"></i>
+        </button>
+        <button class="tool-btn" id="tool-measure-area" onclick="toggleMeasureTool('area')" data-tooltip="Medir Área (m²/ha)">
+          <i class="fa-solid fa-draw-polygon"></i>
+        </button>
+        <button class="tool-btn" id="tool-clear-highlight" data-tooltip="Limpar Seleção">
+          <i class="fa-solid fa-eraser"></i>
+        </button>
+        <button class="tool-btn" id="tool-streetview" onclick="toggleStreetViewTool()" data-tooltip="Google Street View 360° (Clique no mapa)">
+          <i class="fa-solid fa-street-view" style="color:#f59e0b;"></i>
+        </button>
+        <button class="tool-btn" id="tool-print" data-tooltip="Imprimir Mapa">
+          <i class="fa-solid fa-print"></i>
+        </button>
+      </div>
+
+      <!-- BANNER FLUTUANTE DE MODO STREET VIEW ATIVO -->
+      <div id="streetview-active-banner" class="streetview-active-banner">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="streetview-banner-pulse"></span>
+          <i class="fa-solid fa-street-view" style="font-size:1.15rem;color:#f59e0b;"></i>
+          <div>
+            <b>Modo Street View Ativo:</b> Clique em qualquer rua, via ou lote no mapa para abrir a visão panorâmica 360°.
+          </div>
+        </div>
+        <button onclick="toggleStreetViewTool(false)" class="btn-close-banner" title="Sair do modo Street View">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- PAINEL FLUTUANTE DE MEDIÇÃO -->
+      <div class="measure-panel" id="measure-panel">
+        <div>
+          <div style="font-size:0.7rem;color:#64748b;font-weight:600;" id="measure-type-title">Medição</div>
+          <div class="measure-value" id="measure-value">0,00 m</div>
+        </div>
+        <button class="btn-measure-close" onclick="resetMeasure()" title="Fechar Medição">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- INDICADOR DE CARREGAMENTO -->
+      <div id="loading-indicator" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(15,23,42,0.9);color:white;padding:16px 24px;border-radius:12px;z-index:9999;display:flex;align-items:center;gap:12px;box-shadow:0 10px 25px rgba(0,0,0,0.3);font-size:0.9rem;">
+        <i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.4rem;color:#38bdf8;"></i>
+        <span>Carregando dados cartográficos de Mário Campos...</span>
+      </div>
+
+      <!-- BARRA DE STATUS INFERIOR (COORDENADAS E ESCALA) -->
+      <div class="map-status-bar">
+        <div class="status-coords">
+          <div class="coord-tag">
+            <span class="coord-label">WGS84:</span>
+            <span class="coord-val"><span id="coord-lat">-20.07370</span>, <span id="coord-lng">-44.16930</span></span>
+          </div>
+          <div class="coord-tag">
+            <span class="coord-label">UTM 23S:</span>
+            <span class="coord-val">E: <span id="coord-utm-x">586.820</span> m | N: <span id="coord-utm-y">7.779.850</span> m</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center;">
+          <span id="zoom-level">Zoom: 14</span>
+          <span style="color:#94a3b8;">Datum: SIRGAS 2000</span>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL GOOGLE STREET VIEW 360° -->
+  <div id="streetview-modal" class="streetview-modal">
+    <div class="streetview-dialog" id="streetview-dialog">
+      <div class="streetview-header">
+        <div class="streetview-title-group">
+          <div class="streetview-icon-badge">
+            <i class="fa-solid fa-street-view"></i>
+          </div>
+          <div>
+            <div class="streetview-title">Google Street View &bull; Visão Panorâmica 360°</div>
+            <div class="streetview-coords" id="streetview-coords-display">Mário Campos - MG</div>
+          </div>
+        </div>
+        <div class="streetview-header-actions">
+          <a id="streetview-external-link" href="#" target="_blank" class="streetview-btn-action external" title="Abrir em tela cheia no Google Maps oficial">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            <span>Google Maps</span>
+          </a>
+          <button class="streetview-btn-action" id="streetview-maximize-btn" onclick="toggleMaximizeStreetView()" title="Maximizar / Restaurar">
+            <i class="fa-solid fa-expand" id="streetview-maximize-icon"></i>
+          </button>
+          <button class="streetview-btn-action close" onclick="closeStreetView()" title="Fechar Street View">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <div class="streetview-body">
+        <div id="streetview-loader" class="streetview-loader">
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+          <span>Carregando visão 360° no local...</span>
+        </div>
+        <iframe id="streetview-iframe" class="streetview-iframe" src="" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- BIBLIOTECAS EXTERNAS -->
+  <!-- Leaflet 1.9.4 -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Proj4js (Conversão de coordenadas WGS84 para SIRGAS 2000 UTM 23S) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.2/proj4.js"></script>
+  <!-- Chart.js 4.4 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <!-- Script Principal da Aplicação -->
+  <script src="js/app.js"></script>
+</body>
+</html>
