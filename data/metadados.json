@@ -6,22 +6,20 @@
   "crs_nativo": "SIRGAS 2000 / UTM zone 23S (EPSG:31983)",
   "crs_web": "WGS 84 (EPSG:4326)",
   "total_bairros": 33,
-  "total_lotes": 6465,
+  "total_lotes": 6467,
   "total_edificacoes": 1541,
-  "total_edificacoes_projetadas": 8600,
-  "area_edificacoes_projetadas_m2": 1136990.87,
   "total_quadras": 290,
   "total_vias": 645,
-  "total_area_cadastrada_m2": 8336747.44,
+  "total_area_cadastrada_m2": 8358821.98,
   "bairros": [
     {
       "codigo": "01",
       "pasta": "01_JARDIM_PRIMAVERA",
       "nome": "Jardim Primavera",
-      "lotes": 461,
+      "lotes": 463,
       "edificacoes": 173,
       "quadras": 34,
-      "area_cadastrada_m2": 295048.36
+      "area_cadastrada_m2": 317122.9
     },
     {
       "codigo": "02",

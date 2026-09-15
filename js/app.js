@@ -955,6 +955,11 @@ function populateMetadataUI(meta) {
   document.getElementById('header-stat-vias').textContent = meta.total_vias.toLocaleString('pt-BR');
   document.getElementById('header-stat-bairros').textContent = meta.total_bairros;
 
+  const badgeLotes = document.getElementById('badge-lotes');
+  if (badgeLotes && meta.total_lotes) {
+    badgeLotes.textContent = meta.total_lotes.toLocaleString('pt-BR');
+  }
+
   const badgeProj = document.getElementById('badge-edificacoes-projetadas');
   if (badgeProj && meta.total_edificacoes_projetadas) {
     badgeProj.textContent = meta.total_edificacoes_projetadas.toLocaleString('pt-BR');
