@@ -989,6 +989,36 @@ body {
 }
 
 /* =======================================================
+   BLOQUEIO DAS CAMADAS DE LOTES E INFORMAÇÕES DURANTE MEDIÇÃO
+   ======================================================= */
+body.measuring-active .leaflet-tooltip-pane,
+body.measuring-active .leaflet-tooltip,
+body.measuring-active .leaflet-popup-pane {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.measuring-active #map,
+body.measuring-active #map * {
+  cursor: crosshair !important;
+}
+
+.measure-badge-blocked {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* =======================================================
    POPUP CUSTOM STYLING
    ======================================================= */
 .leaflet-popup-content-wrapper {

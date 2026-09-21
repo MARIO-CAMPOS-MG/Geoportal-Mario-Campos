@@ -175,12 +175,15 @@ function initMap() {
     }
   });
 
-  // Fechar Street View ao pressionar tecla ESC
+  // Fechar Street View ou Medição ao pressionar tecla ESC
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       const modal = document.getElementById('streetview-modal');
       if (modal && modal.classList.contains('active')) {
         closeStreetView();
+      }
+      if (AppState.measureState && AppState.measureState.active && window.resetMeasure) {
+        window.resetMeasure();
       }
     }
   });
@@ -327,6 +330,11 @@ function setupLayers() {
       `, { sticky: true });
 
       layer.on('click', (e) => {
+        if (AppState.measureState && AppState.measureState.active) {
+          L.DomEvent.stopPropagation(e);
+          if (window.handleMeasureClick) window.handleMeasureClick(e.latlng);
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         if (AppState.streetView && AppState.streetView.active) {
           openStreetView(e.latlng.lat, e.latlng.lng);
@@ -360,6 +368,11 @@ function setupLayers() {
       `, { sticky: true });
 
       layer.on('click', (e) => {
+        if (AppState.measureState && AppState.measureState.active) {
+          L.DomEvent.stopPropagation(e);
+          if (window.handleMeasureClick) window.handleMeasureClick(e.latlng);
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         if (AppState.streetView && AppState.streetView.active) {
           openStreetView(e.latlng.lat, e.latlng.lng);
@@ -381,6 +394,11 @@ function setupLayers() {
     onEachFeature: (feat, layer) => {
       layer.bindTooltip(`<b>Edificação</b><br>${feat.properties.bairro || ''}`, { sticky: true });
       layer.on('click', (e) => {
+        if (AppState.measureState && AppState.measureState.active) {
+          L.DomEvent.stopPropagation(e);
+          if (window.handleMeasureClick) window.handleMeasureClick(e.latlng);
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         if (AppState.streetView && AppState.streetView.active) {
           openStreetView(e.latlng.lat, e.latlng.lng);
@@ -405,6 +423,11 @@ function setupLayers() {
       const label = p.QUADRA || p.quadra || 'Quadra';
       layer.bindTooltip(`<b>Quadra ${label}</b><br>${p.bairro || ''}`, { sticky: true });
       layer.on('click', (e) => {
+        if (AppState.measureState && AppState.measureState.active) {
+          L.DomEvent.stopPropagation(e);
+          if (window.handleMeasureClick) window.handleMeasureClick(e.latlng);
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         if (AppState.streetView && AppState.streetView.active) {
           openStreetView(e.latlng.lat, e.latlng.lng);
@@ -425,6 +448,11 @@ function setupLayers() {
     onEachFeature: (feat, layer) => {
       layer.bindTooltip("<b>Via Urbana / Logradouro</b>", { sticky: true });
       layer.on('click', (e) => {
+        if (AppState.measureState && AppState.measureState.active) {
+          L.DomEvent.stopPropagation(e);
+          if (window.handleMeasureClick) window.handleMeasureClick(e.latlng);
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         if (AppState.streetView && AppState.streetView.active) {
           openStreetView(e.latlng.lat, e.latlng.lng);
@@ -446,6 +474,11 @@ function setupLayers() {
     onEachFeature: (feat, layer) => {
       layer.bindTooltip("<b>Recurso Hídrico</b>", { sticky: true });
       layer.on('click', (e) => {
+        if (AppState.measureState && AppState.measureState.active) {
+          L.DomEvent.stopPropagation(e);
+          if (window.handleMeasureClick) window.handleMeasureClick(e.latlng);
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         if (AppState.streetView && AppState.streetView.active) {
           openStreetView(e.latlng.lat, e.latlng.lng);
@@ -467,6 +500,7 @@ function setupLayers() {
    5. POPUP COMPLETO COM TODOS OS DADOS DA FEICAO
    ========================================================== */
 function openCadastrePopup(feat, layer) {
+  if (AppState.measureState && AppState.measureState.active) return;
   const p = feat.properties || {};
   
   // Destacar lote selecionado
@@ -569,6 +603,7 @@ function openCadastrePopup(feat, layer) {
 
 // Popup genérico para todas as outras camadas (Edificações, Vias, etc.)
 function openGenericPopup(feat, layer, titulo) {
+  if (AppState.measureState && AppState.measureState.active) return;
   const p = feat.properties || {};
   
   AppState.highlightLayer.clearLayers();
@@ -645,6 +680,7 @@ function openGenericPopup(feat, layer, titulo) {
 
 // Popup especializado para Edificações Projetadas (Satélite) com Metragem em destaque
 function openEdificacaoProjetadaPopup(feat, layer) {
+  if (AppState.measureState && AppState.measureState.active) return;
   const p = feat.properties || {};
   
   AppState.highlightLayer.clearLayers();
@@ -750,6 +786,9 @@ window.zoomToFeature = function(lat, lng) {
    ========================================================== */
 window.toggleStreetViewTool = function(forceState) {
   const newState = (forceState !== undefined) ? forceState : !AppState.streetView.active;
+  if (newState && AppState.measureState && AppState.measureState.active && window.resetMeasure) {
+    window.resetMeasure();
+  }
   AppState.streetView.active = newState;
 
   const btn = document.getElementById('tool-streetview');
@@ -1358,23 +1397,52 @@ function initMeasureTools() {
       return;
     }
 
+    // Se o Street View estiver ativo, desativa para não haver sobreposição
+    if (AppState.streetView && AppState.streetView.active && window.toggleStreetViewTool) {
+      window.toggleStreetViewTool(false);
+    }
+
     resetMeasure();
     AppState.measureState.active = true;
     AppState.measureState.type = type;
+    AppState.measureState._lastClickTime = 0;
+
+    // Bloquear e fechar imediatamente quaisquer popups abertos no mapa
+    AppState.map.closePopup();
+    AppState.map.eachLayer(l => {
+      if (l.closeTooltip) {
+        try { l.closeTooltip(); } catch(err) {}
+      }
+    });
+
+    // Adiciona classe de bloqueio global ao body (bloqueia tooltips, popups e ajusta o cursor)
+    document.body.classList.add('measuring-active');
 
     panel.classList.add('active');
     titleEl.textContent = (type === 'distance') ? 'Medição de Distância' : 'Medição de Área';
     valEl.textContent = (type === 'distance') ? '0,00 m' : '0,00 m²';
 
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`tool-measure-${type}`).classList.add('active');
+    document.querySelectorAll('.tool-btn').forEach(b => {
+      if (b.id === 'tool-measure-distance' || b.id === 'tool-measure-area') {
+        b.classList.remove('active');
+      }
+    });
+    const activeBtn = document.getElementById(`tool-measure-${type}`);
+    if (activeBtn) activeBtn.classList.add('active');
+
     AppState.map.getContainer().style.cursor = 'crosshair';
   };
 
-  AppState.map.on('click', (e) => {
-    if (!AppState.measureState.active) return;
+  // Função centralizada para registrar pontos de medição sem interferência das camadas
+  window.handleMeasureClick = function(latlng) {
+    if (!AppState.measureState || !AppState.measureState.active) return;
 
-    const latlng = e.latlng;
+    const now = Date.now();
+    if (AppState.measureState._lastClickTime && (now - AppState.measureState._lastClickTime < 60)) {
+      return;
+    }
+    AppState.measureState._lastClickTime = now;
+
     AppState.measureState.points.push(latlng);
 
     const marker = L.circleMarker(latlng, {
@@ -1382,13 +1450,18 @@ function initMeasureTools() {
       color: '#ef4444',
       fillColor: '#ffffff',
       fillOpacity: 1,
-      weight: 2
+      weight: 2,
+      interactive: false // Não captura cliques futuros para não bloquear novos vértices
     }).addTo(AppState.map);
     AppState.measureState.markers.push(marker);
 
     if (AppState.measureState.type === 'distance') {
       if (!AppState.measureState.line) {
-        AppState.measureState.line = L.polyline(AppState.measureState.points, { color: '#ef4444', weight: 3 }).addTo(AppState.map);
+        AppState.measureState.line = L.polyline(AppState.measureState.points, { 
+          color: '#ef4444', 
+          weight: 3,
+          interactive: false 
+        }).addTo(AppState.map);
       } else {
         AppState.measureState.line.setLatLngs(AppState.measureState.points);
       }
@@ -1399,9 +1472,9 @@ function initMeasureTools() {
       }
 
       if (totalDist > 1000) {
-        valEl.textContent = `${(totalDist / 1000).toFixed(2)} km`;
+        valEl.textContent = `${(totalDist / 1000).toFixed(2)} km (${totalDist.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m)`;
       } else {
-        valEl.textContent = `${totalDist.toFixed(1)} m`;
+        valEl.textContent = `${totalDist.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m`;
       }
     } else if (AppState.measureState.type === 'area') {
       if (AppState.measureState.points.length >= 3) {
@@ -1410,7 +1483,8 @@ function initMeasureTools() {
             color: '#ef4444',
             fillColor: '#ef4444',
             fillOpacity: 0.25,
-            weight: 2
+            weight: 2,
+            interactive: false
           }).addTo(AppState.map);
         } else {
           AppState.measureState.polygon.setLatLngs(AppState.measureState.points);
@@ -1422,7 +1496,15 @@ function initMeasureTools() {
         } else {
           valEl.textContent = `${areaM2.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m²`;
         }
+      } else {
+        valEl.textContent = `${AppState.measureState.points.length} ponto${AppState.measureState.points.length === 1 ? '' : 's'} (mín. 3)`;
       }
+    }
+  };
+
+  AppState.map.on('click', (e) => {
+    if (AppState.measureState && AppState.measureState.active) {
+      window.handleMeasureClick(e.latlng);
     }
   });
 
@@ -1430,6 +1512,7 @@ function initMeasureTools() {
     AppState.measureState.active = false;
     AppState.measureState.type = null;
     AppState.measureState.points = [];
+    AppState.measureState._lastClickTime = 0;
 
     AppState.measureState.markers.forEach(m => AppState.map.removeLayer(m));
     AppState.measureState.markers = [];
@@ -1443,8 +1526,15 @@ function initMeasureTools() {
       AppState.measureState.polygon = null;
     }
 
+    // Remove classe de bloqueio global do body
+    document.body.classList.remove('measuring-active');
+
     panel.classList.remove('active');
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tool-btn').forEach(b => {
+      if (b.id === 'tool-measure-distance' || b.id === 'tool-measure-area') {
+        b.classList.remove('active');
+      }
+    });
     AppState.map.getContainer().style.cursor = '';
   };
 }
@@ -1613,6 +1703,9 @@ function initUIControls() {
   document.getElementById('tool-clear-highlight').addEventListener('click', () => {
     AppState.highlightLayer.clearLayers();
     AppState.map.closePopup();
+    if (AppState.measureState && AppState.measureState.active && window.resetMeasure) {
+      window.resetMeasure();
+    }
   });
 
   document.getElementById('tool-print').addEventListener('click', () => {

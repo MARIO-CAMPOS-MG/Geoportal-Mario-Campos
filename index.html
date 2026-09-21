@@ -549,10 +549,14 @@
       <!-- PAINEL FLUTUANTE DE MEDIÇÃO -->
       <div class="measure-panel" id="measure-panel">
         <div>
-          <div style="font-size:0.7rem;color:#64748b;font-weight:600;" id="measure-type-title">Medição</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span style="font-size:0.75rem;color:#475569;font-weight:700;" id="measure-type-title">Medição</span>
+            <span class="measure-badge-blocked"><i class="fa-solid fa-lock"></i> Lotes bloqueados</span>
+          </div>
           <div class="measure-value" id="measure-value">0,00 m</div>
+          <div style="font-size:0.7rem;color:#64748b;margin-top:2px;">Clique no mapa para medir. Pressione [Esc] para encerrar.</div>
         </div>
-        <button class="btn-measure-close" onclick="resetMeasure()" title="Fechar Medição">
+        <button class="btn-measure-close" onclick="resetMeasure()" title="Fechar Medição (Esc)">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
