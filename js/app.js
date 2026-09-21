@@ -1025,6 +1025,7 @@ function populateMetadataUI(meta) {
 
   const bairroSelects = [
     document.getElementById('bairro-jumper-select'),
+    document.getElementById('sidebar-bairro-select'),
     document.getElementById('search-bairro')
   ];
   
@@ -1038,32 +1039,66 @@ function populateMetadataUI(meta) {
     });
   });
 
-  const jumper = document.getElementById('bairro-jumper-select');
-  if (jumper) {
-    jumper.addEventListener('change', () => {
-      const selectedFolder = jumper.value;
-      if (!selectedFolder) {
+  function zoomToBairro(selectedFolder) {
+    if (!selectedFolder) {
+      if (AppState.layers['limite']) {
         AppState.map.fitBounds(AppState.layers['limite'].getBounds());
-        return;
       }
+      return;
+    }
 
-      let foundBounds = null;
-      if (AppState.layers['lotes']) {
-        const bGroup = L.featureGroup();
-        AppState.layers['lotes'].eachLayer(l => {
-          if (l.feature && l.feature.properties && l.feature.properties.bairro_pasta === selectedFolder) {
-            bGroup.addLayer(l);
-          }
-        });
-        if (bGroup.getLayers().length > 0) {
-          foundBounds = bGroup.getBounds();
+    let foundBounds = null;
+
+    // 1. Prioridade: Obter limites diretamente da camada de bairros_limites (caso disponível)
+    if (AppState.data.bairros && AppState.data.bairros.features) {
+      const bFeature = AppState.data.bairros.features.find(f => f.properties && f.properties.pasta === selectedFolder);
+      if (bFeature) {
+        const tempLayer = L.geoJSON(bFeature);
+        const bBounds = tempLayer.getBounds();
+        if (bBounds && bBounds.isValid()) {
+          foundBounds = bBounds;
         }
       }
+    }
 
-      if (foundBounds) {
-        AppState.map.fitBounds(foundBounds, { padding: [40, 40] });
+    // 2. Fallback: calcular a partir dos lotes cadastrais com validação geográfica estrita
+    if (!foundBounds && AppState.layers['lotes']) {
+      const bGroup = L.featureGroup();
+      AppState.layers['lotes'].eachLayer(l => {
+        if (l.feature && l.feature.properties && l.feature.properties.bairro_pasta === selectedFolder) {
+          const bounds = l.getBounds ? l.getBounds() : null;
+          if (bounds && bounds.isValid()) {
+            const c = bounds.getCenter();
+            if (c.lat > -21.0 && c.lat < -19.0 && c.lng > -45.0 && c.lng < -43.0) {
+              bGroup.addLayer(l);
+            }
+          }
+        }
+      });
+      if (bGroup.getLayers().length > 0) {
+        foundBounds = bGroup.getBounds();
       }
-    });
+    }
+
+    if (foundBounds && foundBounds.isValid()) {
+      AppState.map.fitBounds(foundBounds, { padding: [40, 40] });
+    }
+  }
+
+  const jumper = document.getElementById('bairro-jumper-select');
+  const sidebarJumper = document.getElementById('sidebar-bairro-select');
+
+  function handleBairroChange(val) {
+    if (jumper && jumper.value !== val) jumper.value = val;
+    if (sidebarJumper && sidebarJumper.value !== val) sidebarJumper.value = val;
+    zoomToBairro(val);
+  }
+
+  if (jumper) {
+    jumper.addEventListener('change', () => handleBairroChange(jumper.value));
+  }
+  if (sidebarJumper) {
+    sidebarJumper.addEventListener('change', () => handleBairroChange(sidebarJumper.value));
   }
 }
 
@@ -1167,8 +1202,21 @@ function setupSearchIndex() {
     if (matches.length === 1 && autoZoomSingle) {
       zoomToSearchResult(0);
     } else if (matches.length > 1 && autoZoomSingle) {
-      const tempGroup = L.featureGroup(matches.map(m => L.geoJSON(m)));
-      AppState.map.fitBounds(tempGroup.getBounds(), { padding: [40, 40], maxZoom: 18 });
+      const validLayers = [];
+      matches.forEach(m => {
+        const lyr = L.geoJSON(m);
+        const b = lyr.getBounds();
+        if (b && b.isValid()) {
+          const c = b.getCenter();
+          if (c.lat > -21.0 && c.lat < -19.0 && c.lng > -45.0 && c.lng < -43.0) {
+            validLayers.push(lyr);
+          }
+        }
+      });
+      if (validLayers.length > 0) {
+        const tempGroup = L.featureGroup(validLayers);
+        AppState.map.fitBounds(tempGroup.getBounds(), { padding: [40, 40], maxZoom: 18 });
+      }
     }
   }
 

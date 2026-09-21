@@ -6,11 +6,11 @@
   "crs_nativo": "SIRGAS 2000 / UTM zone 23S (EPSG:31983)",
   "crs_web": "WGS 84 (EPSG:4326)",
   "total_bairros": 33,
-  "total_lotes": 6467,
+  "total_lotes": 6460,
   "total_edificacoes": 1541,
   "total_quadras": 290,
   "total_vias": 645,
-  "total_area_cadastrada_m2": 8358821.98,
+  "total_area_cadastrada_m2": 8480580.71,
   "bairros": [
     {
       "codigo": "01",
@@ -106,7 +106,7 @@
       "codigo": "11",
       "pasta": "11_CAMPO_VERDE",
       "nome": "Campo Verde",
-      "lotes": 521,
+      "lotes": 520,
       "edificacoes": 27,
       "quadras": 31,
       "area_cadastrada_m2": 180305.83
@@ -115,10 +115,10 @@
       "codigo": "12",
       "pasta": "12_CHACARAS_MARIA_ANTONIETA",
       "nome": "Chacaras Maria Antonieta",
-      "lotes": 373,
+      "lotes": 367,
       "edificacoes": 40,
       "quadras": 13,
-      "area_cadastrada_m2": 267997.94
+      "area_cadastrada_m2": 389756.67
     },
     {
       "codigo": "13",
