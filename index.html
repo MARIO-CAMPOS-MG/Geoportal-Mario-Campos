@@ -479,19 +479,24 @@
     <main class="map-container">
       <div id="map"></div>
 
-      <!-- SELETOR DOS 3 MAPAS DE FUNDO -->
+      <!-- SELETOR DE MAPAS DE FUNDO -->
       <div class="basemap-switcher" id="basemap-switcher">
-        <!-- 1. Satélite -->
-        <div class="basemap-option active" data-base="satellite" title="Satélite de Alta Resolução">
+        <!-- 1. Satélite Esri -->
+        <div class="basemap-option active" data-base="satellite" title="Satélite de Alta Resolução (Esri - Zoom Contínuo)">
           <div class="basemap-thumb" style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/14/9082/6182');"></div>
           <span class="basemap-name">Satélite</span>
         </div>
-        <!-- 2. OpenStreetMap -->
+        <!-- 2. Google Satélite -->
+        <div class="basemap-option" data-base="google" title="Google Satélite HD (Nativo em Zoom 20+)">
+          <div class="basemap-thumb" style="background-image: url('https://mt1.google.com/vt/lyrs=s&x=6182&y=9082&z=14');"></div>
+          <span class="basemap-name">Google Sat</span>
+        </div>
+        <!-- 3. OpenStreetMap -->
         <div class="basemap-option" data-base="osm" title="OpenStreetMap Padrão">
           <div class="basemap-thumb" style="background-image: url('https://tile.openstreetmap.org/14/6182/9082.png');"></div>
           <span class="basemap-name">Cartografia</span>
         </div>
-        <!-- 3. CartoDB Positron -->
+        <!-- 4. CartoDB Positron -->
         <div class="basemap-option" data-base="positron" title="CartoDB Positron (Mapa Claro / Alto Contraste)">
           <div class="basemap-thumb" style="background-image: url('https://a.basemaps.cartocdn.com/light_all/14/6182/9082.png');"></div>
           <span class="basemap-name">Claro</span>

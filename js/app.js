@@ -151,7 +151,7 @@ function initMap() {
     center: [-20.0737, -44.1693],
     zoom: 14,
     minZoom: 11,
-    maxZoom: 20,
+    maxZoom: 22,
     preferCanvas: true,
     zoomControl: false
   });
@@ -196,23 +196,42 @@ function initBasemaps() {
   const basemaps = {
     satellite: L.layerGroup([
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19,
+        maxNativeZoom: 19,
+        maxZoom: 22,
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
       }),
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
+        maxNativeZoom: 19,
+        maxZoom: 22,
+        subdomains: 'abcd',
+        opacity: 0.85
+      })
+    ]),
+
+    google: L.layerGroup([
+      L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        maxNativeZoom: 20,
+        maxZoom: 22,
+        subdomains: '0123',
+        attribution: '&copy; Google'
+      }),
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        maxNativeZoom: 19,
+        maxZoom: 22,
         subdomains: 'abcd',
         opacity: 0.85
       })
     ]),
     
     osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
+      maxNativeZoom: 19,
+      maxZoom: 22,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }),
     
     positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
+      maxNativeZoom: 19,
+      maxZoom: 22,
       subdomains: 'abcd',
       attribution: '&copy; <a href="https://carto.com/">CARTO</a> Positron'
     })
