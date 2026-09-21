@@ -227,13 +227,6 @@ function initBasemaps() {
       maxNativeZoom: 19,
       maxZoom: 22,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }),
-    
-    positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxNativeZoom: 19,
-      maxZoom: 22,
-      subdomains: 'abcd',
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a> Positron'
     })
   };
 
@@ -1023,23 +1016,17 @@ function populateMetadataUI(meta) {
     badgeProj.textContent = meta.total_edificacoes_projetadas.toLocaleString('pt-BR');
   }
 
-  const bairroSelects = [
-    document.getElementById('bairro-jumper-select'),
-    document.getElementById('sidebar-bairro-select'),
-    document.getElementById('search-bairro')
-  ];
-  
-  bairroSelects.forEach(select => {
-    if (!select) return;
+  const selectSearchBairro = document.getElementById('search-bairro');
+  if (selectSearchBairro) {
     meta.bairros.forEach(b => {
       const opt = document.createElement('option');
       opt.value = b.pasta;
       opt.textContent = `${b.codigo} - ${b.nome} (${b.lotes} lotes)`;
-      select.appendChild(opt);
+      selectSearchBairro.appendChild(opt);
     });
-  });
+  }
 
-  function zoomToBairro(selectedFolder) {
+  window.zoomToBairro = function(selectedFolder) {
     if (!selectedFolder) {
       if (AppState.layers['limite']) {
         AppState.map.fitBounds(AppState.layers['limite'].getBounds());
@@ -1049,7 +1036,7 @@ function populateMetadataUI(meta) {
 
     let foundBounds = null;
 
-    // 1. Prioridade: Obter limites diretamente da camada de bairros_limites (caso disponível)
+    // 1. Prioridade: Obter limites diretamente da camada de bairros_limites
     if (AppState.data.bairros && AppState.data.bairros.features) {
       const bFeature = AppState.data.bairros.features.find(f => f.properties && f.properties.pasta === selectedFolder);
       if (bFeature) {
@@ -1083,23 +1070,7 @@ function populateMetadataUI(meta) {
     if (foundBounds && foundBounds.isValid()) {
       AppState.map.fitBounds(foundBounds, { padding: [40, 40] });
     }
-  }
-
-  const jumper = document.getElementById('bairro-jumper-select');
-  const sidebarJumper = document.getElementById('sidebar-bairro-select');
-
-  function handleBairroChange(val) {
-    if (jumper && jumper.value !== val) jumper.value = val;
-    if (sidebarJumper && sidebarJumper.value !== val) sidebarJumper.value = val;
-    zoomToBairro(val);
-  }
-
-  if (jumper) {
-    jumper.addEventListener('change', () => handleBairroChange(jumper.value));
-  }
-  if (sidebarJumper) {
-    sidebarJumper.addEventListener('change', () => handleBairroChange(sidebarJumper.value));
-  }
+  };
 }
 
 /* ==========================================================
