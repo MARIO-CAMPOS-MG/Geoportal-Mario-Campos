@@ -6,7 +6,7 @@
   "crs_nativo": "SIRGAS 2000 / UTM zone 23S (EPSG:31983)",
   "crs_web": "WGS 84 (EPSG:4326)",
   "total_bairros": 33,
-  "total_lotes": 6460,
+  "total_lotes": 6363,
   "total_edificacoes": 1541,
   "total_quadras": 290,
   "total_vias": 645,
@@ -115,10 +115,10 @@
       "codigo": "12",
       "pasta": "12_CHACARAS_MARIA_ANTONIETA",
       "nome": "Chacaras Maria Antonieta",
-      "lotes": 367,
+      "lotes": 270,
       "edificacoes": 40,
       "quadras": 13,
-      "area_cadastrada_m2": 389756.67
+      "area_cadastrada_m2": 267997.94
     },
     {
       "codigo": "13",
@@ -309,5 +309,6 @@
       "quadras": 0,
       "area_cadastrada_m2": 0.0
     }
-  ]
+  ],
+  "area_cadastrada_m2": 8358821.98
 }

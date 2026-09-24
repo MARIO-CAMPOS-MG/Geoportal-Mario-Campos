@@ -1458,18 +1458,27 @@ body.measuring-active #map * {
 }
 
 .lot-number-label {
-  background: rgba(15, 23, 42, 0.85);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 700;
-  font-family: 'Inter', monospace, sans-serif;
-  padding: 1px 4px;
+  background: transparent;
+  color: #0f172a;
+  border: none;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: 'Inter', sans-serif;
+  padding: 0;
   text-align: center;
   pointer-events: none;
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: none;
+  text-shadow:
+    -1px -1px 0 #ffffff,
+     1px -1px 0 #ffffff,
+    -1px  1px 0 #ffffff,
+     1px  1px 0 #ffffff,
+     0px -1px 0 #ffffff,
+     0px  1px 0 #ffffff,
+    -1px  0px 0 #ffffff,
+     1px  0px 0 #ffffff,
+     0px  0px 3px rgba(255, 255, 255, 0.95);
   transform: translate(-50%, -50%);
   user-select: none;
 }

@@ -322,23 +322,7 @@ for folder in bairro_folders:
             all_lotes.append(ft)
         bairro_lote_count = len(feats)
         
-    if folder == "12_CHACARAS_MARIA_ANTONIETA":
-        l2 = os.path.join(bdir, "LOTES_MARIA_ANTONIETA_2.shp")
-        if os.path.exists(l2):
-            f2 = extract_features(l2, field_map=field_map_lotes)
-            for ft in f2:
-                p = ft["properties"]
-                p["bairro_pasta"] = folder
-                p["nome_bairro"] = clean_bname + " (Gleba 2)"
-                for k in cad_junk_keys:
-                    p.pop(k, None)
-                for k in ['quadra', 'lote', 'distrito', 'bairro_cod', 'unidade', 'numero_predial']:
-                    if isinstance(p.get(k), str):
-                        p[k] = re.sub(r'\.+$', '', p[k].strip())
-                if isinstance(p.get('insc_imob'), str):
-                    p['insc_imob'] = re.sub(r'\.{2,}', '.', p['insc_imob'].strip())
-                all_lotes.append(ft)
-            bairro_lote_count += len(f2)
+    # 12_CHACARAS_MARIA_ANTONIETA: todos os 270 lotes das 13 quadras estao em LOTES_CHACARAS_MARIA_ANTONIETA.shp
 
     # 2. EDIFICACOES
     edif_shps = [s for s in shps if "EDIFIC" in os.path.basename(s).upper()]
