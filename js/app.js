@@ -6,41 +6,41 @@
 // Definição do sistema de coordenadas UTM SIRGAS 2000 Zona 23S (EPSG:31983)
 proj4.defs("EPSG:31983", "+proj=utm +zone=23 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 
-// Paleta de 33 cores exclusivas e contrastantes para cada um dos 33 Bairros
+// Paleta de 33 cores exclusivas e de alto contraste espacial para os 33 Bairros
 const BairroCores = {
-  "01_JARDIM_PRIMAVERA": "#1d4ed8",             // Azul Real
-  "02_CENTRO": "#b91c1c",                       // Vermelho Granada
-  "03_SAO_TARCISIO": "#15803d",                 // Verde Esmeralda
-  "04_VILA_TANIA": "#d97706",                   // Âmbar Ocre
-  "05_VILA_MARIO_CAMPOS": "#7e22ce",            // Roxo Ametista
-  "06_VILA_PRIMAVERA": "#0e7490",               // Ciano Petróleo
-  "07_VILA_ENY": "#ea580c",                     // Laranja Fogo
-  "08_VILA_LOURDES": "#4338ca",                 // Índigo Real
-  "09_VILA_ONDINA": "#047857",                  // Verde Floresta
-  "10_RETA_DO_JACARE": "#a16207",               // Dourado Oliva
-  "11_CAMPO_VERDE": "#4d7c0f",                  // Verde Oliva
-  "12_CHACARAS_MARIA_ANTONIETA": "#a21caf",     // Fúcsia Intenso
-  "13_ANEXO_MARIA_ANTONIETA": "#be185d",        // Rosa Framboesa
-  "14_RESIDENCIAL_MARIA_ANTONIETA": "#e11d48",   // Carmesim
-  "15_SERRA_DOS_BANDEIRANTES": "#0f766e",       // Verde Teal
-  "16_SAO_RAFAEL": "#6d28d9",                   // Violeta
-  "17_BOM_JARDIM": "#166534",                   // Verde Musgo Escuro
-  "18_BELA VISTA": "#c2410c",                   // Castanho Terracota
-  "19_CHACARAS_BOM_JARDIM": "#0284c7",          // Azul Céu Cerúleo
-  "20_CHACARAS_JOAQUINA_MARIA": "#831843",      // Vinho Bordô Escuro
-  "21_DAS_PALMEIRAS": "#3730a3",                // Azul Marinho Profundo
-  "22_TANGARA": "#065f46",                      // Verde Pinho
-  "23_CHACARAS_RECANTO_DO_BOM_JARDIM": "#991c1c", // Vermelho Carmim Escuro
-  "24_ESTANCIAS_SERRA_VERDE": "#3f6212",        // Verde Abacate Escuro
-  "25_AREAS_DO_PARAOPEBA": "#581c87",           // Roxo Berinjela
-  "26_CHACARAS_RECANTO_DO_FUNIL": "#854d0e",    // Marrom Ocre
-  "27_VILA_DAS_AMOREIRAS": "#9d174d",           // Rosa Rubi Escuro
-  "28_FECHO_DO_FUNIL": "#115e59",               // Verde Malaquita
-  "29_CAMPO_BELO": "#1e40af",                   // Azul Cobalto Escuro
-  "30_BAMBUI": "#eab308",                       // Amarelo Dourado
-  "31_BALNEARIO_ESTANCIAS_DO_BOM_JARDIM": "#2563eb", // Azul Safira
-  "32_VILLA_DA_SERRA": "#65a30d",               // Verde Maçã
-  "33_GARCIAS": "#f97316"                       // Laranja Tangerina
+  "01_JARDIM_PRIMAVERA": "#7c3aed",             // Violeta Intenso
+  "02_CENTRO": "#c026d3",                       // Fúcsia Magenta
+  "03_SAO_TARCISIO": "#15803d",                 // Verde Floresta
+  "04_VILA_TANIA": "#65a30d",                   // Verde Limão
+  "05_VILA_MARIO_CAMPOS": "#0284c7",            // Azul Celeste
+  "06_VILA_PRIMAVERA": "#be185d",               // Rosa Framboesa
+  "07_VILA_ENY": "#2563eb",                     // Azul Real
+  "08_VILA_LOURDES": "#e11d48",                 // Vermelho Carmesim
+  "09_VILA_ONDINA": "#14532d",                  // Verde Pinheiro Escuro
+  "10_RETA_DO_JACARE": "#581c87",               // Roxo Berinjela
+  "11_CAMPO_VERDE": "#ca8a04",                  // Amarelo Mostarda
+  "12_CHACARAS_MARIA_ANTONIETA": "#a21caf",     // Orquídea Fúcsia
+  "13_ANEXO_MARIA_ANTONIETA": "#164e63",        // Petróleo Escuro
+  "14_RESIDENCIAL_MARIA_ANTONIETA": "#0f766e",   // Verde Teal Escuro
+  "15_SERRA_DOS_BANDEIRANTES": "#831843",       // Vinho Bordô
+  "16_SAO_RAFAEL": "#9f1239",                   // Vinho Rubi
+  "17_BOM_JARDIM": "#4d7c0f",                   // Verde Oliva
+  "18_BELA VISTA": "#d97706",                   // Laranja Âmbar
+  "19_CHACARAS_BOM_JARDIM": "#0369a1",          // Azul Cerúleo
+  "20_CHACARAS_JOAQUINA_MARIA": "#ea580c",      // Laranja Fogo
+  "21_DAS_PALMEIRAS": "#1d4ed8",                // Azul Cobalto
+  "22_TANGARA": "#059669",                      // Verde Jade
+  "23_CHACARAS_RECANTO_DO_BOM_JARDIM": "#dc2626", // Vermelho Carmim Vivo
+  "24_ESTANCIAS_SERRA_VERDE": "#9333ea",        // Púrpura Brilhante
+  "25_AREAS_DO_PARAOPEBA": "#16a34a",           // Verde Esmeralda
+  "26_CHACARAS_RECANTO_DO_FUNIL": "#0d9488",    // Azul Petróleo Claro
+  "27_VILA_DAS_AMOREIRAS": "#4f46e5",           // Índigo Real
+  "28_FECHO_DO_FUNIL": "#b45309",               // Castanho Cobre
+  "29_CAMPO_BELO": "#0891b2",                   // Ciano Oceano
+  "30_BAMBUI": "#854d0e",                       // Bronze Ocre
+  "31_BALNEARIO_ESTANCIAS_DO_BOM_JARDIM": "#6d28d9", // Violeta Iris
+  "32_VILLA_DA_SERRA": "#78350f",               // Marrom Terra
+  "33_GARCIAS": "#312e81"                       // Azul Meia-Noite
 };
 
 function getBairroColor(key) {
@@ -106,12 +106,17 @@ const AppState = {
   layers: {},
   layerGroups: {},
   activeBasemap: 'satellite',
+  selectedBairro: null,
+  cadastralLabels: {
+    active: false,
+    quadrasGroup: null,
+    lotesGroup: null
+  },
   metadata: null,
   data: {
     limite: null,
     bairros: null,
     lotes: null,
-    edificacoes: null,
     edificacoes_projetadas: null,
     quadras: null,
     vias: null,
@@ -140,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBasemaps();
   initUIControls();
   initCoordinateTracker();
+  initCadastralLabels();
   loadAllData();
 });
 
@@ -255,6 +261,204 @@ function initBasemaps() {
 }
 
 /* ==========================================================
+   2.5 RÓTULOS CADASTRAIS E CENTRÓIDES (LOTES & QUADRAS)
+   ========================================================== */
+function getGeometryBBoxCenter(geom) {
+  if (!geom || !geom.coordinates) return null;
+  let minLat = Infinity, maxLat = -Infinity;
+  let minLng = Infinity, maxLng = -Infinity;
+  let hasPoints = false;
+
+  function traverse(coords) {
+    if (!Array.isArray(coords) || coords.length === 0) return;
+    if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+      const lng = coords[0];
+      const lat = coords[1];
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      hasPoints = true;
+    } else {
+      for (let i = 0; i < coords.length; i++) {
+        traverse(coords[i]);
+      }
+    }
+  }
+
+  traverse(geom.coordinates);
+  if (!hasPoints) return null;
+  return L.latLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
+}
+
+function precomputeFeatureCenters() {
+  if (AppState.data.quadras && AppState.data.quadras.features) {
+    AppState.data.quadras.features.forEach(f => {
+      f._center = getGeometryBBoxCenter(f.geometry);
+    });
+  }
+  if (AppState.data.lotes && AppState.data.lotes.features) {
+    AppState.data.lotes.features.forEach(f => {
+      f._center = getGeometryBBoxCenter(f.geometry);
+    });
+  }
+}
+
+let cadastralDebounceTimer = null;
+function scheduleCadastralUpdate() {
+  if (!AppState.cadastralLabels || !AppState.cadastralLabels.active) return;
+  if (cadastralDebounceTimer) clearTimeout(cadastralDebounceTimer);
+  cadastralDebounceTimer = setTimeout(() => {
+    updateCadastralLabels();
+  }, 100);
+}
+
+function updateQuadraCentroids() {
+  if (!AppState.cadastralLabels || !AppState.cadastralLabels.active) return;
+  const group = AppState.cadastralLabels.quadrasGroup;
+  if (!group) return;
+  group.clearLayers();
+
+  if (!AppState.data.quadras || !AppState.data.quadras.features) return;
+
+  const currentZoom = AppState.map.getZoom();
+  // Quando nenhum bairro está selecionado e o zoom é amplo (< 14), oculta para evitar sobreposição
+  if (!AppState.selectedBairro && currentZoom < 14) {
+    return;
+  }
+
+  const mapBounds = AppState.map.getBounds();
+  const features = AppState.data.quadras.features;
+
+  for (let i = 0; i < features.length; i++) {
+    const feat = features[i];
+    const p = feat.properties || {};
+
+    if (AppState.selectedBairro) {
+      if (p.pasta && p.pasta !== AppState.selectedBairro && p.bairro !== AppState.selectedBairro) {
+        continue;
+      }
+    }
+
+    const rawQ = p.QUADRA || p.quadra;
+    if (!rawQ) continue;
+    const cleanQ = String(rawQ).trim().replace(/^0+/, '') || String(rawQ).trim();
+
+    const center = feat._center || getGeometryBBoxCenter(feat.geometry);
+    if (!center) continue;
+
+    if (!mapBounds.pad(0.15).contains(center)) continue;
+
+    const marker = L.marker(center, {
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({
+        className: 'cadastral-div-icon',
+        html: `<div class="quadra-centroid-badge"><span class="q-prefix">Q.</span>${cleanQ}</div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      })
+    });
+    group.addLayer(marker);
+  }
+}
+
+function updateLotLabels() {
+  if (!AppState.cadastralLabels || !AppState.cadastralLabels.active) return;
+  const group = AppState.cadastralLabels.lotesGroup;
+  if (!group) return;
+  group.clearLayers();
+
+  const currentZoom = AppState.map.getZoom();
+  // Rótulos numéricos dos lotes visíveis a partir do zoom 17 para excelente legibilidade e fluidez
+  if (currentZoom < 17) {
+    return;
+  }
+
+  if (!AppState.data.lotes || !AppState.data.lotes.features) return;
+
+  const mapBounds = AppState.map.getBounds();
+  const features = AppState.data.lotes.features;
+  let count = 0;
+  const maxLabels = 1500;
+
+  for (let i = 0; i < features.length; i++) {
+    const feat = features[i];
+    const p = feat.properties || {};
+
+    if (AppState.selectedBairro) {
+      if (p.bairro_pasta !== AppState.selectedBairro && p.nome_bairro !== AppState.selectedBairro) {
+        continue;
+      }
+    }
+
+    const rawL = p.lote;
+    if (!rawL) continue;
+    const cleanL = String(rawL).trim().replace(/^0+/, '') || String(rawL).trim();
+
+    const center = feat._center || getGeometryBBoxCenter(feat.geometry);
+    if (!center) continue;
+
+    if (!mapBounds.pad(0.05).contains(center)) continue;
+
+    const marker = L.marker(center, {
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({
+        className: 'cadastral-div-icon',
+        html: `<div class="lot-number-label">${cleanL}</div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      })
+    });
+    group.addLayer(marker);
+    count++;
+    if (count >= maxLabels) break;
+  }
+}
+
+function updateCadastralLabels() {
+  updateQuadraCentroids();
+  updateLotLabels();
+}
+window.updateCadastralLabels = updateCadastralLabels;
+
+function initCadastralLabels() {
+  AppState.cadastralLabels.quadrasGroup = L.layerGroup();
+  AppState.cadastralLabels.lotesGroup = L.layerGroup();
+
+  const toggle = document.getElementById('toggle-cadastral-labels');
+  const badge = document.getElementById('badge-labels');
+
+  if (toggle) {
+    toggle.addEventListener('change', () => {
+      const active = toggle.checked;
+      AppState.cadastralLabels.active = active;
+
+      if (badge) {
+        badge.textContent = active ? 'Ativo' : 'Desativado';
+        badge.style.background = active ? '#dcfce7' : '#f1f5f9';
+        badge.style.color = active ? '#15803d' : '#64748b';
+      }
+
+      if (active) {
+        AppState.map.addLayer(AppState.cadastralLabels.quadrasGroup);
+        AppState.map.addLayer(AppState.cadastralLabels.lotesGroup);
+        updateCadastralLabels();
+      } else {
+        AppState.map.removeLayer(AppState.cadastralLabels.quadrasGroup);
+        AppState.map.removeLayer(AppState.cadastralLabels.lotesGroup);
+        AppState.cadastralLabels.quadrasGroup.clearLayers();
+        AppState.cadastralLabels.lotesGroup.clearLayers();
+      }
+    });
+  }
+
+  AppState.map.on('moveend', scheduleCadastralUpdate);
+  AppState.map.on('zoomend', scheduleCadastralUpdate);
+}
+
+/* ==========================================================
    3. CARREGAMENTO DOS DADOS GEOESPACIAIS
    ========================================================== */
 async function loadAllData() {
@@ -266,12 +470,11 @@ async function loadAllData() {
     AppState.metadata = await metaRes.json();
     populateMetadataUI(AppState.metadata);
 
-    const [limite, bairros, vias, hidro, edif, edifProj, quadras, lotes] = await Promise.all([
+    const [limite, bairros, vias, hidro, edifProj, quadras, lotes] = await Promise.all([
       fetch('data/limite_mario_campos.geojson').then(r => r.json()),
       fetch('data/bairros_limites.geojson').then(r => r.json()),
       fetch('data/vias.geojson').then(r => r.json()),
       fetch('data/hidrografia.geojson').then(r => r.json()),
-      fetch('data/edificacoes.geojson').then(r => r.json()),
       fetch('data/edificacoes_projetadas.geojson').then(r => r.json()),
       fetch('data/quadras.geojson').then(r => r.json()),
       fetch('data/lotes_cadastrais.geojson').then(r => r.json())
@@ -281,16 +484,21 @@ async function loadAllData() {
     AppState.data.bairros = bairros;
     AppState.data.vias = vias;
     AppState.data.hidrografia = hidro;
-    AppState.data.edificacoes = edif;
     AppState.data.edificacoes_projetadas = edifProj;
     AppState.data.quadras = quadras;
     AppState.data.lotes = lotes;
+
+    precomputeFeatureCenters();
 
     setupLayers();
     setupSearchIndex();
     setupAttributeTable();
     setupCharts();
     renderBairrosLegend();
+
+    if (AppState.cadastralLabels && AppState.cadastralLabels.active) {
+      updateCadastralLabels();
+    }
 
     if (loadingIndicator) loadingIndicator.style.display = 'none';
   } catch (err) {
@@ -395,33 +603,7 @@ function setupLayers() {
     }
   });
 
-  // 4. Edificações
-  AppState.layers['edificacoes'] = L.geoJSON(AppState.data.edificacoes, {
-    style: {
-      color: '#334155',
-      weight: 1.2,
-      fillColor: '#94a3b8',
-      fillOpacity: 0.8
-    },
-    onEachFeature: (feat, layer) => {
-      layer.bindTooltip(`<b>Edificação</b><br>${feat.properties.bairro || ''}`, { sticky: true });
-      layer.on('click', (e) => {
-        if (AppState.measureState && AppState.measureState.active) {
-          L.DomEvent.stopPropagation(e);
-          if (window.handleMeasureClick) window.handleMeasureClick(e.latlng);
-          return;
-        }
-        L.DomEvent.stopPropagation(e);
-        if (AppState.streetView && AppState.streetView.active) {
-          openStreetView(e.latlng.lat, e.latlng.lng);
-          return;
-        }
-        openGenericPopup(feat, layer, "Edificação Mapeada");
-      });
-    }
-  });
-
-  // 5. Quadras Urbanas
+  // 4. Quadras Urbanas
   AppState.layers['quadras'] = L.geoJSON(AppState.data.quadras, {
     style: {
       color: '#312e81',
@@ -936,14 +1118,28 @@ function setupLayerTreeEvents() {
       if (valSpan) valSpan.textContent = `${slider.value}%`;
 
       if (layer) {
-        layer.eachLayer(l => {
-          if (l.setStyle) {
-            l.setStyle({
-              fillOpacity: val * 0.5,
-              opacity: val
-            });
-          }
-        });
+        if (layerKey === 'lotes' && AppState.selectedBairro) {
+          layer.eachLayer(l => {
+            const p = l.feature && l.feature.properties;
+            if (!p) return;
+            const isMatch = (p.bairro_pasta === AppState.selectedBairro || p.nome_bairro === AppState.selectedBairro);
+            if (isMatch && l.setStyle) {
+              l.setStyle({
+                fillOpacity: val * 0.6,
+                opacity: val
+              });
+            }
+          });
+        } else {
+          layer.eachLayer(l => {
+            if (l.setStyle) {
+              l.setStyle({
+                fillOpacity: val * 0.5,
+                opacity: val
+              });
+            }
+          });
+        }
       }
     });
   });
@@ -984,17 +1180,11 @@ function renderBairrosLegend() {
 }
 
 window.zoomToBairroByFolder = function(folder) {
-  if (AppState.layers['lotes']) {
-    const bGroup = L.featureGroup();
-    AppState.layers['lotes'].eachLayer(l => {
-      if (l.feature && l.feature.properties && l.feature.properties.bairro_pasta === folder) {
-        bGroup.addLayer(l);
-      }
-    });
-    if (bGroup.getLayers().length > 0) {
-      AppState.map.fitBounds(bGroup.getBounds(), { padding: [40, 40] });
-    }
+  const selectSearchBairro = document.getElementById('search-bairro');
+  if (selectSearchBairro) {
+    selectSearchBairro.value = folder;
   }
+  applyBairroFilter(folder);
 };
 
 /* ==========================================================
@@ -1002,7 +1192,7 @@ window.zoomToBairroByFolder = function(folder) {
    ========================================================== */
 function populateMetadataUI(meta) {
   document.getElementById('header-stat-lotes').textContent = meta.total_lotes.toLocaleString('pt-BR');
-  document.getElementById('header-stat-edif').textContent = meta.total_edificacoes.toLocaleString('pt-BR');
+  document.getElementById('header-stat-edif').textContent = (meta.total_edificacoes_projetadas || meta.total_edificacoes || 8600).toLocaleString('pt-BR');
   document.getElementById('header-stat-vias').textContent = meta.total_vias.toLocaleString('pt-BR');
   document.getElementById('header-stat-bairros').textContent = meta.total_bairros;
 
@@ -1072,6 +1262,70 @@ function populateMetadataUI(meta) {
     }
   };
 }
+
+/* ==========================================================
+   8.5 FILTRO EXCLUSIVO DE BAIRRO
+   ========================================================== */
+function applyBairroFilter(bairroPasta) {
+  AppState.selectedBairro = bairroPasta || null;
+  const opacityInput = document.querySelector('.opacity-slider[data-layer="lotes"]');
+  const baseOpacity = opacityInput ? parseFloat(opacityInput.value) / 100 : 0.8;
+
+  // Garantir que a camada de lotes esteja ativa no mapa se um bairro for selecionado
+  const lotesCheckbox = document.querySelector('.layer-checkbox[data-layer="lotes"]');
+  if (bairroPasta && AppState.layers['lotes'] && !AppState.map.hasLayer(AppState.layers['lotes'])) {
+    AppState.map.addLayer(AppState.layers['lotes']);
+    if (lotesCheckbox) lotesCheckbox.checked = true;
+  }
+
+  if (AppState.layers['lotes']) {
+    AppState.layers['lotes'].eachLayer(layer => {
+      const p = layer.feature && layer.feature.properties;
+      if (!p) return;
+      const bColor = getBairroColor(p.bairro_pasta || p.nome_bairro);
+      const isMatch = !bairroPasta || p.bairro_pasta === bairroPasta || p.nome_bairro === bairroPasta;
+
+      if (isMatch) {
+        layer.setStyle({
+          opacity: 1,
+          fillOpacity: baseOpacity * 0.6,
+          color: bColor,
+          fillColor: bColor,
+          weight: 1.4
+        });
+        const el = layer.getElement ? layer.getElement() : null;
+        if (el) {
+          el.style.display = '';
+          el.style.pointerEvents = 'auto';
+        }
+      } else {
+        layer.setStyle({
+          opacity: 0,
+          fillOpacity: 0,
+          weight: 0
+        });
+        const el = layer.getElement ? layer.getElement() : null;
+        if (el) {
+          el.style.display = 'none';
+          el.style.pointerEvents = 'none';
+        }
+      }
+    });
+  }
+
+  // Zoom no bairro selecionado ou nos limites municipais
+  if (bairroPasta && window.zoomToBairro) {
+    window.zoomToBairro(bairroPasta);
+  } else if (!bairroPasta && AppState.layers['limite']) {
+    AppState.map.fitBounds(AppState.layers['limite'].getBounds(), { padding: [30, 30] });
+  }
+
+  // Atualizar rótulos cadastrais se ativos
+  if (AppState.cadastralLabels && AppState.cadastralLabels.active && window.updateCadastralLabels) {
+    window.updateCadastralLabels();
+  }
+}
+window.applyBairroFilter = applyBairroFilter;
 
 /* ==========================================================
    9. BUSCA CADASTRAL AVANÇADA (LOTE, QUADRA E BAIRRO)
@@ -1205,6 +1459,7 @@ function setupSearchIndex() {
       if (countBadge) countBadge.style.display = 'none';
       AppState.highlightLayer.clearLayers();
       AppState.map.closePopup();
+      applyBairroFilter('');
       doSearch(false);
     });
   }
@@ -1225,6 +1480,7 @@ function setupSearchIndex() {
 
   if (selectBairro) {
     selectBairro.addEventListener('change', () => {
+      applyBairroFilter(selectBairro.value);
       doSearch(true);
     });
   }
