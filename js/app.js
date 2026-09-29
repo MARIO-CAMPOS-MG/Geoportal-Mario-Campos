@@ -488,6 +488,12 @@ async function loadAllData() {
     AppState.data.quadras = quadras;
     AppState.data.lotes = lotes;
 
+    // Atualiza imediatamente o indicador de edificações projetadas no cabeçalho
+    const headerEdifEl = document.getElementById('header-stat-edif');
+    if (headerEdifEl && edifProj && edifProj.features) {
+      headerEdifEl.textContent = edifProj.features.length.toLocaleString('pt-BR');
+    }
+
     precomputeFeatureCenters();
 
     setupLayers();
@@ -1184,7 +1190,10 @@ window.zoomToBairroByFolder = function(folder) {
    ========================================================== */
 function populateMetadataUI(meta) {
   document.getElementById('header-stat-lotes').textContent = meta.total_lotes.toLocaleString('pt-BR');
-  document.getElementById('header-stat-edif').textContent = (meta.total_edificacoes_projetadas || meta.total_edificacoes || 8600).toLocaleString('pt-BR');
+  const totalEdifProj = (AppState.data && AppState.data.edificacoes_projetadas && AppState.data.edificacoes_projetadas.features)
+    ? AppState.data.edificacoes_projetadas.features.length
+    : (meta.total_edificacoes_projetadas || meta.total_edificacoes || 8600);
+  document.getElementById('header-stat-edif').textContent = totalEdifProj.toLocaleString('pt-BR');
   document.getElementById('header-stat-vias').textContent = meta.total_vias.toLocaleString('pt-BR');
   document.getElementById('header-stat-bairros').textContent = meta.total_bairros;
 
@@ -1194,8 +1203,8 @@ function populateMetadataUI(meta) {
   }
 
   const badgeProj = document.getElementById('badge-edificacoes-projetadas');
-  if (badgeProj && meta.total_edificacoes_projetadas) {
-    badgeProj.textContent = meta.total_edificacoes_projetadas.toLocaleString('pt-BR');
+  if (badgeProj) {
+    badgeProj.textContent = totalEdifProj.toLocaleString('pt-BR');
   }
 
   const selectSearchBairro = document.getElementById('search-bairro');
