@@ -5,7 +5,7 @@ import re
 from osgeo import ogr, osr
 
 base_dir = r"C:\Users\RAFAEL PC\Desktop\CADASTRO TECNICO IMOBILIÁRIO - 2023\Mapeamento - Mario Campos"
-out_dir = r"C:\Users\RAFAEL PC\.gemini\antigravity\scratch\geoportal-mario-campos\data"
+out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 os.makedirs(out_dir, exist_ok=True)
 
 target_srs = osr.SpatialReference()

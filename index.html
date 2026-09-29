@@ -16,6 +16,9 @@
   <!-- Leaflet 1.9.4 CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
+  <!-- Favicon Oficial Prefeitura de Mário Campos -->
+  <link rel="icon" type="image/png" href="assets/logo_prefeitura.png">
+
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -27,7 +30,7 @@
   <header class="header">
     <div class="header-brand">
       <div class="header-logo">
-        <i class="fa-solid fa-map-location-dot"></i>
+        <img src="assets/logo_prefeitura.png" alt="Prefeitura Municipal de Mário Campos" class="header-logo-img">
       </div>
       <div class="header-titles">
         <h1>
@@ -60,6 +63,9 @@
 
     <!-- Ações do Cabeçalho -->
     <div class="header-actions">
+      <button class="header-btn" id="btn-sync-shapefiles" title="Reprocessar e atualizar dados a partir dos Shapefiles originais">
+        <i class="fa-solid fa-arrows-rotate"></i> <span>Atualizar Shapefiles</span>
+      </button>
       <button class="header-btn" id="btn-header-about" title="Sobre o Geoportal">
         <i class="fa-solid fa-circle-info"></i> Sobre
       </button>
@@ -538,7 +544,9 @@
             <span class="measure-badge-blocked"><i class="fa-solid fa-lock"></i> Lotes bloqueados</span>
           </div>
           <div class="measure-value" id="measure-value">0,00 m</div>
-          <div style="font-size:0.7rem;color:#64748b;margin-top:2px;">Clique no mapa para medir. Pressione [Esc] para encerrar.</div>
+          <div style="font-size:0.7rem;color:#64748b;margin-top:2px;" id="measure-hint-text">
+            Clique no mapa para criar pontos. <b style="color:#0284c7;">Arraste qualquer ponto</b> para ajustar o polígono. [Esc] encerra.
+          </div>
         </div>
         <button class="btn-measure-close" onclick="resetMeasure()" title="Fechar Medição (Esc)">
           <i class="fa-solid fa-xmark"></i>

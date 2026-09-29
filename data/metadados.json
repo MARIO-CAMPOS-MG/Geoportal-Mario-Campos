@@ -10,16 +10,16 @@
   "total_edificacoes": 1541,
   "total_quadras": 290,
   "total_vias": 645,
-  "total_area_cadastrada_m2": 8480580.71,
+  "total_area_cadastrada_m2": 8337107.44,
   "bairros": [
     {
       "codigo": "01",
       "pasta": "01_JARDIM_PRIMAVERA",
       "nome": "Jardim Primavera",
-      "lotes": 463,
+      "lotes": 462,
       "edificacoes": 173,
       "quadras": 34,
-      "area_cadastrada_m2": 317122.9
+      "area_cadastrada_m2": 295408.36
     },
     {
       "codigo": "02",
@@ -106,7 +106,7 @@
       "codigo": "11",
       "pasta": "11_CAMPO_VERDE",
       "nome": "Campo Verde",
-      "lotes": 520,
+      "lotes": 521,
       "edificacoes": 27,
       "quadras": 31,
       "area_cadastrada_m2": 180305.83
@@ -309,6 +309,5 @@
       "quadras": 0,
       "area_cadastrada_m2": 0.0
     }
-  ],
-  "area_cadastrada_m2": 8358821.98
+  ]
 }

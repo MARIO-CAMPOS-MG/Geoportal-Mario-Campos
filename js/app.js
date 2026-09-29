@@ -513,6 +513,15 @@ async function loadAllData() {
    4. CONFIGURAÇÃO E ESTILIZAÇÃO DAS CAMADAS
    ========================================================== */
 function setupLayers() {
+  // Limpar camadas existentes se estiver re-executando (ex: após atualização de shapefiles)
+  if (AppState.layers) {
+    Object.keys(AppState.layers).forEach(k => {
+      if (AppState.layers[k] && AppState.map.hasLayer(AppState.layers[k])) {
+        AppState.map.removeLayer(AppState.layers[k]);
+      }
+    });
+  }
+
   // 1. LIMITE MUNICIPAL (EM COR VERMELHA, APENAS REPRESENTATIVO, NÃO CLICÁVEL)
   AppState.layers['limite'] = L.geoJSON(AppState.data.limite, {
     interactive: false,
@@ -603,32 +612,15 @@ function setupLayers() {
     }
   });
 
-  // 4. Quadras Urbanas
+  // 4. Quadras Urbanas (Camada puramente representativa e visual - sem cliques ou popups)
   AppState.layers['quadras'] = L.geoJSON(AppState.data.quadras, {
+    interactive: false,
     style: {
       color: '#312e81',
       weight: 2,
       dashArray: '4, 4',
       fillColor: '#6366f1',
       fillOpacity: 0.08
-    },
-    onEachFeature: (feat, layer) => {
-      const p = feat.properties;
-      const label = p.QUADRA || p.quadra || 'Quadra';
-      layer.bindTooltip(`<b>Quadra ${label}</b><br>${p.bairro || ''}`, { sticky: true });
-      layer.on('click', (e) => {
-        if (AppState.measureState && AppState.measureState.active) {
-          L.DomEvent.stopPropagation(e);
-          if (window.handleMeasureClick) window.handleMeasureClick(e.latlng);
-          return;
-        }
-        L.DomEvent.stopPropagation(e);
-        if (AppState.streetView && AppState.streetView.active) {
-          openStreetView(e.latlng.lat, e.latlng.lng);
-          return;
-        }
-        openGenericPopup(feat, layer, `Quadra ${label}`);
-      });
     }
   });
 
@@ -1727,6 +1719,132 @@ function initMeasureTools() {
     AppState.map.getContainer().style.cursor = 'crosshair';
   };
 
+  // Função para recalcular e atualizar medições e geometrias em tempo real
+  function updateMeasurementDisplay() {
+    const points = AppState.measureState.points;
+    const type = AppState.measureState.type;
+
+    if (type === 'distance') {
+      if (points.length >= 2) {
+        if (!AppState.measureState.line) {
+          AppState.measureState.line = L.polyline(points, {
+            color: '#ef4444',
+            weight: 3,
+            interactive: false
+          }).addTo(AppState.map);
+        } else {
+          AppState.measureState.line.setLatLngs(points);
+        }
+
+        let totalDist = 0;
+        for (let i = 1; i < points.length; i++) {
+          totalDist += points[i - 1].distanceTo(points[i]);
+        }
+
+        if (totalDist > 1000) {
+          valEl.textContent = `${(totalDist / 1000).toFixed(2)} km (${totalDist.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m)`;
+        } else {
+          valEl.textContent = `${totalDist.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m`;
+        }
+      } else if (points.length === 1) {
+        if (AppState.measureState.line) {
+          AppState.map.removeLayer(AppState.measureState.line);
+          AppState.measureState.line = null;
+        }
+        valEl.textContent = '1 ponto (clique para traçar a linha)';
+      } else {
+        if (AppState.measureState.line) {
+          AppState.map.removeLayer(AppState.measureState.line);
+          AppState.measureState.line = null;
+        }
+        valEl.textContent = '0,00 m';
+      }
+    } else if (type === 'area') {
+      if (points.length >= 3) {
+        if (!AppState.measureState.polygon) {
+          AppState.measureState.polygon = L.polygon(points, {
+            color: '#ef4444',
+            fillColor: '#ef4444',
+            fillOpacity: 0.25,
+            weight: 2,
+            interactive: false
+          }).addTo(AppState.map);
+        } else {
+          AppState.measureState.polygon.setLatLngs(points);
+        }
+
+        const areaM2 = calculatePolygonArea(points);
+        if (areaM2 >= 10000) {
+          valEl.textContent = `${(areaM2 / 10000).toFixed(2)} ha (${areaM2.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m²)`;
+        } else {
+          valEl.textContent = `${areaM2.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m²`;
+        }
+      } else {
+        if (AppState.measureState.polygon) {
+          AppState.map.removeLayer(AppState.measureState.polygon);
+          AppState.measureState.polygon = null;
+        }
+        valEl.textContent = `${points.length} ponto${points.length === 1 ? '' : 's'} (mín. 3 para área)`;
+      }
+    }
+  }
+
+  // Cria um vértice arrastável e interativo para edição precisa do polígono
+  function createVertexMarker(latlng) {
+    const icon = L.divIcon({
+      className: 'measure-vertex-icon',
+      html: '<div class="measure-vertex-handle" title="Arraste para ajustar posição com precisão. Clique com o botão direito para remover o ponto."></div>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+
+    const marker = L.marker(latlng, {
+      draggable: true,
+      icon: icon,
+      zIndexOffset: 10000
+    }).addTo(AppState.map);
+
+    // Evita que o clique e mousedown no vértice propaguem para o mapa criando pontos duplicados
+    marker.on('click', (e) => {
+      L.DomEvent.stopPropagation(e);
+    });
+    marker.on('mousedown', (e) => {
+      L.DomEvent.stopPropagation(e);
+    });
+
+    // Atualização fluida em tempo real durante o arraste
+    marker.on('drag', () => {
+      const idx = AppState.measureState.markers.indexOf(marker);
+      if (idx !== -1) {
+        AppState.measureState.points[idx] = marker.getLatLng();
+        updateMeasurementDisplay();
+      }
+    });
+
+    marker.on('dragend', () => {
+      const idx = AppState.measureState.markers.indexOf(marker);
+      if (idx !== -1) {
+        AppState.measureState.points[idx] = marker.getLatLng();
+        updateMeasurementDisplay();
+      }
+    });
+
+    // Exclusão de vértice individual com clique direito
+    marker.on('contextmenu', (e) => {
+      L.DomEvent.stopPropagation(e);
+      L.DomEvent.preventDefault(e);
+      const idx = AppState.measureState.markers.indexOf(marker);
+      if (idx !== -1) {
+        AppState.map.removeLayer(marker);
+        AppState.measureState.markers.splice(idx, 1);
+        AppState.measureState.points.splice(idx, 1);
+        updateMeasurementDisplay();
+      }
+    });
+
+    return marker;
+  }
+
   // Função centralizada para registrar pontos de medição sem interferência das camadas
   window.handleMeasureClick = function(latlng) {
     if (!AppState.measureState || !AppState.measureState.active) return;
@@ -1738,62 +1856,10 @@ function initMeasureTools() {
     AppState.measureState._lastClickTime = now;
 
     AppState.measureState.points.push(latlng);
-
-    const marker = L.circleMarker(latlng, {
-      radius: 5,
-      color: '#ef4444',
-      fillColor: '#ffffff',
-      fillOpacity: 1,
-      weight: 2,
-      interactive: false // Não captura cliques futuros para não bloquear novos vértices
-    }).addTo(AppState.map);
+    const marker = createVertexMarker(latlng);
     AppState.measureState.markers.push(marker);
 
-    if (AppState.measureState.type === 'distance') {
-      if (!AppState.measureState.line) {
-        AppState.measureState.line = L.polyline(AppState.measureState.points, { 
-          color: '#ef4444', 
-          weight: 3,
-          interactive: false 
-        }).addTo(AppState.map);
-      } else {
-        AppState.measureState.line.setLatLngs(AppState.measureState.points);
-      }
-
-      let totalDist = 0;
-      for (let i = 1; i < AppState.measureState.points.length; i++) {
-        totalDist += AppState.measureState.points[i - 1].distanceTo(AppState.measureState.points[i]);
-      }
-
-      if (totalDist > 1000) {
-        valEl.textContent = `${(totalDist / 1000).toFixed(2)} km (${totalDist.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m)`;
-      } else {
-        valEl.textContent = `${totalDist.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m`;
-      }
-    } else if (AppState.measureState.type === 'area') {
-      if (AppState.measureState.points.length >= 3) {
-        if (!AppState.measureState.polygon) {
-          AppState.measureState.polygon = L.polygon(AppState.measureState.points, {
-            color: '#ef4444',
-            fillColor: '#ef4444',
-            fillOpacity: 0.25,
-            weight: 2,
-            interactive: false
-          }).addTo(AppState.map);
-        } else {
-          AppState.measureState.polygon.setLatLngs(AppState.measureState.points);
-        }
-
-        const areaM2 = calculatePolygonArea(AppState.measureState.points);
-        if (areaM2 >= 10000) {
-          valEl.textContent = `${(areaM2 / 10000).toFixed(2)} ha (${areaM2.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m²)`;
-        } else {
-          valEl.textContent = `${areaM2.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} m²`;
-        }
-      } else {
-        valEl.textContent = `${AppState.measureState.points.length} ponto${AppState.measureState.points.length === 1 ? '' : 's'} (mín. 3)`;
-      }
-    }
+    updateMeasurementDisplay();
   };
 
   AppState.map.on('click', (e) => {
@@ -1808,7 +1874,9 @@ function initMeasureTools() {
     AppState.measureState.points = [];
     AppState.measureState._lastClickTime = 0;
 
-    AppState.measureState.markers.forEach(m => AppState.map.removeLayer(m));
+    AppState.measureState.markers.forEach(m => {
+      try { AppState.map.removeLayer(m); } catch(err) {}
+    });
     AppState.measureState.markers = [];
 
     if (AppState.measureState.line) {
@@ -2009,4 +2077,56 @@ function initUIControls() {
   document.getElementById('btn-header-about').addEventListener('click', () => {
     alert("Geoportal Mário Campos - Cadastro Técnico Imobiliário 2023\nLimite Municipal em destaque Vermelho Oficial.\n33 Bairros mapeados com cores individuais e lotes correspondentes.");
   });
+
+  const btnSyncShapefiles = document.getElementById('btn-sync-shapefiles');
+  if (btnSyncShapefiles) {
+    btnSyncShapefiles.addEventListener('click', async () => {
+      const confirmSync = confirm(
+        "Deseja atualizar a base de dados do Geoportal a partir dos Shapefiles originais?\n\n" +
+        "Esta ação irá ler as pastas de mapeamento e atualizar lotes, quadras, vias e bairros no sistema."
+      );
+      if (!confirmSync) return;
+
+      const originalHtml = btnSyncShapefiles.innerHTML;
+      btnSyncShapefiles.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> <span>Atualizando...</span>';
+      btnSyncShapefiles.classList.add('syncing');
+
+      // Exibe indicador de carregamento
+      const loadingEl = document.getElementById('loading-indicator');
+      if (loadingEl) {
+        loadingEl.style.display = 'flex';
+        const span = loadingEl.querySelector('span');
+        if (span) span.textContent = 'Reprocessando Shapefiles cadastrais originais...';
+      }
+
+      try {
+        const response = await fetch('/api/sync-shapefiles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          const res = await response.json();
+          alert(`Atualização concluída com sucesso!\n\n${res.message || 'Os dados foram reprocessados a partir dos Shapefiles.'}`);
+          // Recarrega todos os dados cartográficos dinamicamente no mapa
+          await loadAllData();
+        } else {
+          // Servidor estático (como GitHub Pages) ou erro de execução local
+          alert(
+            "A sincronização direta com os arquivos Shapefile locais requer a execução pelo script INICIAR_GEOPORTAL.bat no seu computador.\n\n" +
+            "Se você está utilizando a versão online (GitHub Pages) ou se o servidor local não pôde processar, execute o arquivo ATUALIZAR_SHAPEFILES.bat na pasta do projeto e envie as alterações para o GitHub."
+          );
+        }
+      } catch (err) {
+        alert(
+          "Não foi possível conectar ao serviço de atualização local.\n\n" +
+          "Certifique-se de que o Geoportal foi iniciado com o script INICIAR_GEOPORTAL.bat. Caso prefira atualizar diretamente, dê um duplo clique no arquivo ATUALIZAR_SHAPEFILES.bat na pasta do sistema."
+        );
+      } finally {
+        btnSyncShapefiles.innerHTML = originalHtml;
+        btnSyncShapefiles.classList.remove('syncing');
+        if (loadingEl) loadingEl.style.display = 'none';
+      }
+    });
+  }
 }

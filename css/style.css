@@ -64,15 +64,28 @@ body {
 }
 
 .header-logo {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  height: 48px;
+  width: auto;
+  min-width: 48px;
+  background: transparent;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+  box-shadow: none;
+}
+
+.header-logo-img {
+  height: 44px;
+  width: auto;
+  max-width: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
+  transition: transform 0.2s ease;
+}
+
+.header-logo-img:hover {
+  transform: scale(1.05);
 }
 
 .header-titles h1 {
@@ -164,6 +177,24 @@ body {
 
 .header-btn.primary:hover {
   background: #1d4ed8;
+}
+
+.header-btn#btn-sync-shapefiles {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #6ee7b7;
+}
+
+.header-btn#btn-sync-shapefiles:hover {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #34d399;
+  color: #a7f3d0;
+}
+
+.header-btn#btn-sync-shapefiles.syncing {
+  opacity: 0.8;
+  cursor: wait;
+  pointer-events: none;
 }
 
 /* =======================================================
@@ -1005,6 +1036,23 @@ body.measuring-active #map * {
   cursor: crosshair !important;
 }
 
+/* Permitir cursor grab/grabbing e cliques nos vértices editáveis de medição */
+body.measuring-active .leaflet-marker-pane,
+body.measuring-active .measure-vertex-icon,
+body.measuring-active .measure-vertex-handle {
+  pointer-events: auto !important;
+}
+
+body.measuring-active .measure-vertex-icon,
+body.measuring-active .measure-vertex-handle {
+  cursor: grab !important;
+}
+
+body.measuring-active .measure-vertex-handle:active,
+body.measuring-active .leaflet-drag-target .measure-vertex-handle {
+  cursor: grabbing !important;
+}
+
 .measure-badge-blocked {
   background: #fee2e2;
   color: #dc2626;
@@ -1507,4 +1555,41 @@ body.measuring-active #map * {
   font-size: 9px;
   color: #94a3b8;
   font-weight: 600;
+}
+
+/* =======================================================
+   VÉRTICES DE MEDIÇÃO ARRASTÁVEIS E EDITÁVEIS
+   ======================================================= */
+.measure-vertex-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.measure-vertex-handle {
+  width: 14px;
+  height: 14px;
+  background-color: #ffffff;
+  border: 2.5px solid #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.5);
+  cursor: grab !important;
+  pointer-events: auto !important;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.measure-vertex-handle:hover {
+  transform: scale(1.35);
+  background-color: #fef2f2;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.45), 0 3px 8px rgba(0, 0, 0, 0.6);
+}
+
+.measure-vertex-handle:active,
+.leaflet-drag-target .measure-vertex-handle {
+  cursor: grabbing !important;
+  transform: scale(1.45);
+  background-color: #ef4444;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.6), 0 4px 10px rgba(0, 0, 0, 0.7);
 }
