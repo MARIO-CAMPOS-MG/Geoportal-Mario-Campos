@@ -105,7 +105,7 @@ const AppState = {
   map: null,
   layers: {},
   layerGroups: {},
-  activeBasemap: 'satellite',
+  activeBasemap: 'google',
   selectedBairro: null,
   cadastralLabels: {
     active: false,
@@ -137,12 +137,22 @@ const AppState = {
   streetView: {
     active: false,
     marker: null
+  },
+  swipeState: {
+    active: false,
+    leftYear: '2014',
+    rightYear: '2026_google',
+    leftLayer: null,
+    rightLayer: null,
+    positionRatio: 0.5,
+    overlayCadastre: true
   }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
   initBasemaps();
+  initSwipeTool();
   initUIControls();
   initCoordinateTracker();
   initCadastralLabels();
@@ -191,20 +201,24 @@ function initMap() {
       if (AppState.measureState && AppState.measureState.active && window.resetMeasure) {
         window.resetMeasure();
       }
+      if (AppState.swipeState && AppState.swipeState.active && window.toggleSwipeTool) {
+        window.toggleSwipeTool(false);
+      }
     }
   });
 }
 
 /* ==========================================================
-   2. TRÊS MAPAS DE FUNDO (BASEMAPS)
+   2. TRÊS MAPAS DE FUNDO MAIS RECENTES (BASEMAPS)
    ========================================================== */
 function initBasemaps() {
   const basemaps = {
-    satellite: L.layerGroup([
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxNativeZoom: 19,
+    google: L.layerGroup([
+      L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        maxNativeZoom: 20,
         maxZoom: 22,
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        subdomains: '0123',
+        attribution: '&copy; Google'
       }),
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
         maxNativeZoom: 19,
@@ -214,12 +228,11 @@ function initBasemaps() {
       })
     ]),
 
-    google: L.layerGroup([
-      L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-        maxNativeZoom: 20,
+    satellite: L.layerGroup([
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxNativeZoom: 19,
         maxZoom: 22,
-        subdomains: '0123',
-        attribution: '&copy; Google'
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
       }),
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
         maxNativeZoom: 19,
@@ -237,7 +250,7 @@ function initBasemaps() {
   };
 
   AppState.basemaps = basemaps;
-  basemaps.satellite.addTo(AppState.map);
+  basemaps.google.addTo(AppState.map);
 
   document.querySelectorAll('.basemap-option').forEach(el => {
     el.addEventListener('click', () => {
@@ -246,6 +259,10 @@ function initBasemaps() {
 
       document.querySelectorAll('.basemap-option').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
+
+      if (AppState.swipeState && AppState.swipeState.active) {
+        window.toggleSwipeTool(false);
+      }
 
       AppState.map.removeLayer(basemaps[AppState.activeBasemap]);
       basemaps[type].addTo(AppState.map);
@@ -258,6 +275,306 @@ function initBasemaps() {
       });
     });
   });
+}
+
+/* ==========================================================
+   2.1. FERRAMENTA DE COMPARAÇÃO TEMPORAL: CORTINA DESLIZANTE (SWIPE)
+   ========================================================== */
+const TemporalSatellites = {
+  '2014': {
+    name: '2014 (Histórico Inicial)',
+    badge: '2014 (Histórico Inicial)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/5844/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2014 &copy; Esri, DigitalGlobe'
+  },
+  '2016': {
+    name: '2016 (Histórico)',
+    badge: '2016 (Histórico)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/18966/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2016 &copy; Esri, DigitalGlobe'
+  },
+  '2018': {
+    name: '2018 (Histórico)',
+    badge: '2018 (Histórico)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/23448/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2018 &copy; Esri, DigitalGlobe'
+  },
+  '2020': {
+    name: '2020 (Histórico)',
+    badge: '2020 (Histórico)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/29260/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2020 &copy; Esri, Maxar'
+  },
+  '2022': {
+    name: '2022 (Histórico)',
+    badge: '2022 (Histórico)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/45134/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2022 &copy; Esri, Maxar'
+  },
+  '2024': {
+    name: '2024 (Recente)',
+    badge: '2024 (Recente)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/16453/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2024 &copy; Esri, Maxar'
+  },
+  '2026_google': {
+    name: 'Google Satélite HD (Atual 2026)',
+    badge: '2026 (Google Sat HD)',
+    url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    subdomains: '0123',
+    maxNativeZoom: 20,
+    maxZoom: 22,
+    attribution: '&copy; Google'
+  },
+  '2026_esri': {
+    name: 'Esri Satélite (Atual 2026)',
+    badge: '2026 (Esri Atual)',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Tiles &copy; Esri'
+  }
+};
+
+function initSwipeTool() {
+  const map = AppState.map;
+  if (!map) return;
+
+  // Cria panes específicos para o lado esquerdo e direito caso não existam
+  if (!map.getPane('swipe-left-pane')) {
+    map.createPane('swipe-left-pane');
+    map.getPane('swipe-left-pane').style.zIndex = '205';
+  }
+  if (!map.getPane('swipe-right-pane')) {
+    map.createPane('swipe-right-pane');
+    map.getPane('swipe-right-pane').style.zIndex = '206';
+  }
+
+  const divider = document.getElementById('swipe-divider');
+  const handle = document.getElementById('swipe-handle');
+  const selectLeft = document.getElementById('swipe-select-left');
+  const selectRight = document.getElementById('swipe-select-right');
+  const badgeLeft = document.getElementById('swipe-badge-left-text');
+  const badgeRight = document.getElementById('swipe-badge-right-text');
+  const toggleCadastre = document.getElementById('swipe-toggle-cadastre');
+
+  function updateClip() {
+    if (!AppState.swipeState || !AppState.swipeState.active) return;
+    const mapSize = map.getSize();
+    if (!mapSize || mapSize.x === 0) return;
+
+    const x = Math.round(mapSize.x * AppState.swipeState.positionRatio);
+
+    if (divider) {
+      divider.style.left = `${x}px`;
+    }
+
+    const nw = map.containerPointToLayerPoint([0, 0]);
+    const se = map.containerPointToLayerPoint(mapSize);
+    const clipPt = map.containerPointToLayerPoint([x, 0]);
+
+    const leftPane = map.getPane('swipe-left-pane');
+    const rightPane = map.getPane('swipe-right-pane');
+
+    if (leftPane) {
+      leftPane.style.clip = `rect(${nw.y}px, ${clipPt.x}px, ${se.y}px, ${nw.x}px)`;
+      leftPane.style.clipPath = `polygon(${nw.x}px ${nw.y}px, ${clipPt.x}px ${nw.y}px, ${clipPt.x}px ${se.y}px, ${nw.x}px ${se.y}px)`;
+    }
+
+    if (rightPane) {
+      rightPane.style.clip = `rect(${nw.y}px, ${se.x}px, ${se.y}px, ${clipPt.x}px)`;
+      rightPane.style.clipPath = `polygon(${clipPt.x}px ${nw.y}px, ${se.x}px ${nw.y}px, ${se.x}px ${se.y}px, ${clipPt.x}px ${se.y}px)`;
+    }
+  }
+
+  window.updateSwipeClip = updateClip;
+
+  map.on('move zoom resize', updateClip);
+
+  // Arraste do divisor (mouse e touch)
+  let isDragging = false;
+
+  function onDragStart(e) {
+    if (!AppState.swipeState || !AppState.swipeState.active) return;
+    isDragging = true;
+    document.body.classList.add('swipe-dragging');
+    L.DomEvent.stopPropagation(e);
+    if (e.preventDefault) e.preventDefault();
+  }
+
+  function onDragMove(e) {
+    if (!isDragging || !AppState.swipeState || !AppState.swipeState.active) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const mapRect = map.getContainer().getBoundingClientRect();
+    let x = clientX - mapRect.left;
+    if (x < 20) x = 20;
+    if (x > mapRect.width - 20) x = mapRect.width - 20;
+    AppState.swipeState.positionRatio = x / mapRect.width;
+    updateClip();
+  }
+
+  function onDragEnd() {
+    if (isDragging) {
+      isDragging = false;
+      document.body.classList.remove('swipe-dragging');
+    }
+  }
+
+  if (handle) {
+    handle.addEventListener('mousedown', onDragStart);
+    handle.addEventListener('touchstart', onDragStart, { passive: false });
+  }
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('touchmove', onDragMove, { passive: false });
+  window.addEventListener('mouseup', onDragEnd);
+  window.addEventListener('touchend', onDragEnd);
+
+  // Troca de camadas nos dropdowns
+  function loadLeftLayer(yearKey) {
+    if (AppState.swipeState.leftLayer) {
+      map.removeLayer(AppState.swipeState.leftLayer);
+      AppState.swipeState.leftLayer = null;
+    }
+    const info = TemporalSatellites[yearKey] || TemporalSatellites['2014'];
+    const opts = {
+      pane: 'swipe-left-pane',
+      maxNativeZoom: info.maxNativeZoom || 19,
+      maxZoom: 22,
+      attribution: info.attribution || ''
+    };
+    if (info.subdomains) opts.subdomains = info.subdomains;
+    AppState.swipeState.leftLayer = L.tileLayer(info.url, opts).addTo(map);
+    AppState.swipeState.leftYear = yearKey;
+    if (badgeLeft) badgeLeft.textContent = info.badge || info.name;
+    updateClip();
+  }
+
+  function loadRightLayer(yearKey) {
+    if (AppState.swipeState.rightLayer) {
+      map.removeLayer(AppState.swipeState.rightLayer);
+      AppState.swipeState.rightLayer = null;
+    }
+    const info = TemporalSatellites[yearKey] || TemporalSatellites['2026_google'];
+    const opts = {
+      pane: 'swipe-right-pane',
+      maxNativeZoom: info.maxNativeZoom || 20,
+      maxZoom: 22,
+      attribution: info.attribution || ''
+    };
+    if (info.subdomains) opts.subdomains = info.subdomains;
+    AppState.swipeState.rightLayer = L.tileLayer(info.url, opts).addTo(map);
+    AppState.swipeState.rightYear = yearKey;
+    if (badgeRight) badgeRight.textContent = info.badge || info.name;
+    updateClip();
+  }
+
+  if (selectLeft) {
+    selectLeft.addEventListener('change', (e) => loadLeftLayer(e.target.value));
+  }
+  if (selectRight) {
+    selectRight.addEventListener('change', (e) => loadRightLayer(e.target.value));
+  }
+
+  if (toggleCadastre) {
+    toggleCadastre.addEventListener('change', (e) => {
+      const show = e.target.checked;
+      AppState.swipeState.overlayCadastre = show;
+      if (AppState.layers['lotes']) {
+        if (show) {
+          if (!map.hasLayer(AppState.layers['lotes'])) {
+            AppState.layers['lotes'].addTo(map);
+          }
+        } else {
+          if (map.hasLayer(AppState.layers['lotes'])) {
+            map.removeLayer(AppState.layers['lotes']);
+          }
+        }
+      }
+    });
+  }
+
+  window.toggleSwipeTool = function(activate) {
+    const shouldActive = (activate !== undefined) ? activate : !AppState.swipeState.active;
+
+    if (shouldActive) {
+      // Fecha medição e street view caso ativos
+      if (AppState.measureState && AppState.measureState.active && window.resetMeasure) {
+        window.resetMeasure();
+      }
+      if (AppState.streetView && AppState.streetView.active && window.closeStreetView) {
+        window.closeStreetView();
+      }
+
+      AppState.swipeState.active = true;
+      document.body.classList.add('swipe-active');
+
+      const btn = document.getElementById('tool-swipe-compare');
+      if (btn) btn.classList.add('active');
+
+      // Remove temporariamente o basemap padrão
+      if (AppState.basemaps && AppState.basemaps[AppState.activeBasemap]) {
+        map.removeLayer(AppState.basemaps[AppState.activeBasemap]);
+      }
+
+      AppState.swipeState.positionRatio = 0.5;
+
+      loadLeftLayer(selectLeft ? selectLeft.value : '2014');
+      loadRightLayer(selectRight ? selectRight.value : '2026_google');
+
+      setTimeout(() => {
+        updateClip();
+      }, 50);
+    } else {
+      AppState.swipeState.active = false;
+      document.body.classList.remove('swipe-active');
+      document.body.classList.remove('swipe-dragging');
+
+      const btn = document.getElementById('tool-swipe-compare');
+      if (btn) btn.classList.remove('active');
+
+      if (AppState.swipeState.leftLayer) {
+        map.removeLayer(AppState.swipeState.leftLayer);
+        AppState.swipeState.leftLayer = null;
+      }
+      if (AppState.swipeState.rightLayer) {
+        map.removeLayer(AppState.swipeState.rightLayer);
+        AppState.swipeState.rightLayer = null;
+      }
+
+      const leftPane = map.getPane('swipe-left-pane');
+      const rightPane = map.getPane('swipe-right-pane');
+      if (leftPane) {
+        leftPane.style.clip = '';
+        leftPane.style.clipPath = '';
+      }
+      if (rightPane) {
+        rightPane.style.clip = '';
+        rightPane.style.clipPath = '';
+      }
+
+      // Restaura basemap padrão mais recente
+      if (AppState.basemaps && AppState.basemaps[AppState.activeBasemap]) {
+        AppState.basemaps[AppState.activeBasemap].addTo(map);
+      }
+
+      // Garante que a camada de lotes seja restaurada caso o usuário a tivesse desligado durante a comparação
+      if (AppState.layers['lotes'] && !map.hasLayer(AppState.layers['lotes'])) {
+        AppState.layers['lotes'].addTo(map);
+      }
+    }
+  };
 }
 
 /* ==========================================================
@@ -2076,6 +2393,9 @@ function initUIControls() {
     AppState.map.closePopup();
     if (AppState.measureState && AppState.measureState.active && window.resetMeasure) {
       window.resetMeasure();
+    }
+    if (AppState.swipeState && AppState.swipeState.active && window.toggleSwipeTool) {
+      window.toggleSwipeTool(false);
     }
   });
 

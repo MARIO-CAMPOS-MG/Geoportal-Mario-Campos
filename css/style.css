@@ -1593,3 +1593,239 @@ body.measuring-active .leaflet-drag-target .measure-vertex-handle {
   border-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.6), 0 4px 10px rgba(0, 0, 0, 0.7);
 }
+
+/* =======================================================
+   FERRAMENTA DE COMPARAÇÃO TEMPORAL: CORTINA DESLIZANTE (SWIPE)
+   ======================================================= */
+/* Oculta basemap switcher padrão quando o comparador estiver ativo */
+body.swipe-active .basemap-switcher {
+  display: none !important;
+}
+
+body.swipe-active #swipe-divider,
+body.swipe-active #swipe-control-bar,
+body.swipe-active #swipe-badge-left,
+body.swipe-active #swipe-badge-right {
+  display: flex !important;
+}
+
+/* Divisor Vertical Deslizante */
+.swipe-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7), 0 0 4px #0284c7;
+  z-index: 990;
+  pointer-events: none;
+  display: none;
+  user-select: none;
+}
+
+.swipe-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 3px solid #ffffff;
+  color: #ffffff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(2, 132, 199, 0.4);
+  cursor: ew-resize !important;
+  pointer-events: auto !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.swipe-handle:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 0 6px rgba(2, 132, 199, 0.55);
+}
+
+.swipe-handle:active,
+body.swipe-dragging .swipe-handle {
+  transform: translate(-50%, -50%) scale(1.2);
+  background: #0284c7;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.8), 0 0 0 8px rgba(2, 132, 199, 0.7);
+}
+
+body.swipe-dragging,
+body.swipe-dragging * {
+  cursor: ew-resize !important;
+  user-select: none !important;
+}
+
+/* Painel de Controle Superior Flutuante */
+.swipe-control-bar {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 8px 18px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55);
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 0.84rem;
+  max-width: 95%;
+  animation: slideDownFade 0.25s ease;
+}
+
+.swipe-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.swipe-bar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #38bdf8;
+  white-space: nowrap;
+}
+
+.swipe-selectors-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.swipe-select-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.swipe-select-box label {
+  white-space: nowrap;
+}
+
+.swipe-select {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.swipe-select:focus {
+  border-color: #38bdf8;
+}
+
+.swipe-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.swipe-toggle-cadastre-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 0.2s;
+}
+
+.swipe-toggle-cadastre-label:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.swipe-toggle-cadastre-label input {
+  cursor: pointer;
+  accent-color: #38bdf8;
+}
+
+.swipe-btn-close {
+  background: #ef4444;
+  border: none;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.swipe-btn-close:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Badges de Época nos Lados */
+.swipe-epoch-badge {
+  position: absolute;
+  top: 76px;
+  z-index: 980;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  user-select: none;
+}
+
+.swipe-epoch-badge.left {
+  left: 20px;
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.swipe-epoch-badge.right {
+  right: 20px;
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* Otimização de renderização dos Panes Leaflet */
+.leaflet-swipe-left-pane,
+.leaflet-swipe-right-pane {
+  will-change: clip-path;
+  transition: none;
+}
