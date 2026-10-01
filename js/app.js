@@ -860,6 +860,9 @@ function setupLayers() {
   }).addTo(AppState.map);
 
   // 3. LOTES CADASTRAIS (TODOS OS LOTES NAS CORES CORRESPONDENTES DO BAIRRO COM PERÍMETRO BRANCO)
+  const lotesSlider = document.querySelector('.opacity-slider[data-layer="lotes"]');
+  const initialLotFillOpacity = lotesSlider ? (parseFloat(lotesSlider.value) / 100) * 0.75 : 0.60;
+
   AppState.layers['lotes'] = L.geoJSON(AppState.data.lotes, {
     style: (feature) => {
       const p = feature.properties;
@@ -869,7 +872,7 @@ function setupLayers() {
         weight: 1.2,
         opacity: 0.95,
         fillColor: bColor,
-        fillOpacity: 0.48
+        fillOpacity: initialLotFillOpacity
       };
     },
     onEachFeature: (feat, layer) => {
@@ -1436,15 +1439,17 @@ function setupLayerTreeEvents() {
       if (valSpan) valSpan.textContent = `${slider.value}%`;
 
       if (layer) {
-        if (layerKey === 'lotes' && AppState.selectedBairro) {
+        if (layerKey === 'lotes') {
           layer.eachLayer(l => {
             const p = l.feature && l.feature.properties;
             if (!p) return;
-            const isMatch = (p.bairro_pasta === AppState.selectedBairro || p.nome_bairro === AppState.selectedBairro);
+            const isMatch = !AppState.selectedBairro || (p.bairro_pasta === AppState.selectedBairro || p.nome_bairro === AppState.selectedBairro);
             if (isMatch && l.setStyle) {
               l.setStyle({
-                fillOpacity: val * 0.6,
-                opacity: val
+                fillOpacity: val * 0.75,
+                opacity: 0.95,
+                color: '#ffffff',
+                weight: 1.2
               });
             }
           });
@@ -1609,7 +1614,7 @@ function applyBairroFilter(bairroPasta) {
       if (isMatch) {
         layer.setStyle({
           opacity: 0.95,
-          fillOpacity: baseOpacity * 0.6,
+          fillOpacity: baseOpacity * 0.75,
           color: '#ffffff',
           fillColor: bColor,
           weight: 1.3
