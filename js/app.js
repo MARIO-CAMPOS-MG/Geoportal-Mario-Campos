@@ -666,12 +666,14 @@ function updateQuadraCentroids() {
 
     if (!mapBounds.pad(0.15).contains(center)) continue;
 
+    const isWide = cleanQ.length > 2;
+
     const marker = L.marker(center, {
       interactive: false,
       keyboard: false,
       icon: L.divIcon({
         className: 'cadastral-div-icon',
-        html: `<div class="quadra-centroid-badge"><span class="q-prefix">Q.</span>${cleanQ}</div>`,
+        html: `<div class="quadra-centroid-circle${isWide ? ' wide' : ''}">${cleanQ}</div>`,
         iconSize: [0, 0],
         iconAnchor: [0, 0]
       })
@@ -857,14 +859,15 @@ function setupLayers() {
     }
   }).addTo(AppState.map);
 
-  // 3. LOTES CADASTRAIS (TODOS OS LOTES NAS CORES CORRESPONDENTES DO BAIRRO)
+  // 3. LOTES CADASTRAIS (TODOS OS LOTES NAS CORES CORRESPONDENTES DO BAIRRO COM PERÍMETRO BRANCO)
   AppState.layers['lotes'] = L.geoJSON(AppState.data.lotes, {
     style: (feature) => {
       const p = feature.properties;
       const bColor = getBairroColor(p.bairro_pasta || p.nome_bairro);
       return {
-        color: bColor,
+        color: '#ffffff',
         weight: 1.2,
+        opacity: 0.95,
         fillColor: bColor,
         fillOpacity: 0.48
       };
@@ -1483,7 +1486,7 @@ function renderBairrosLegend() {
     html += `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;border-radius:4px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" onclick="zoomToBairroByFolder('${b.pasta}')">
         <div style="display:flex;align-items:center;gap:8px;font-size:0.78rem;">
-          <span style="width:12px;height:12px;border-radius:3px;background:${bColor};border:1px solid rgba(0,0,0,0.15);flex-shrink:0;"></span>
+          <span style="width:12px;height:12px;border-radius:3px;background:${bColor};border:1.5px solid #ffffff;box-shadow:0 0 0 1px #cbd5e1;flex-shrink:0;"></span>
           <span style="font-weight:500;">${b.codigo} - ${b.nome}</span>
         </div>
         <span style="font-size:0.7rem;background:#e2e8f0;padding:1px 6px;border-radius:999px;font-weight:600;color:#475569;">${b.lotes} lotes</span>
@@ -1605,11 +1608,11 @@ function applyBairroFilter(bairroPasta) {
 
       if (isMatch) {
         layer.setStyle({
-          opacity: 1,
+          opacity: 0.95,
           fillOpacity: baseOpacity * 0.6,
-          color: bColor,
+          color: '#ffffff',
           fillColor: bColor,
-          weight: 1.4
+          weight: 1.3
         });
         const el = layer.getElement ? layer.getElement() : null;
         if (el) {
