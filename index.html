@@ -534,28 +534,49 @@
         <div class="swipe-bar-left">
           <div class="swipe-bar-title">
             <i class="fa-solid fa-clock-rotate-left"></i>
-            <span><b>Comparador Temporal</b> &bull; Expansão Urbana & Construções</span>
+            <span><b>Comparador Temporal</b> &bull; Base Google Earth & Série Histórica</span>
           </div>
           <div class="swipe-selectors-wrap">
             <div class="swipe-select-box">
-              <label for="swipe-select-left">Lado Esquerdo (Anterior):</label>
+              <label for="swipe-select-left">Lado Esquerdo:</label>
               <select id="swipe-select-left" class="swipe-select">
-                <option value="2014" selected>2014 (Histórico Inicial)</option>
-                <option value="2016">2016 (Histórico)</option>
-                <option value="2018">2018 (Histórico)</option>
-                <option value="2020">2020 (Histórico)</option>
-                <option value="2022">2022 (Histórico)</option>
-                <option value="2024">2024 (Recente)</option>
+                <optgroup label="Série Histórica Satélite (DigitalGlobe / Maxar)">
+                  <option value="2014" selected>2014 (Histórico Inicial)</option>
+                  <option value="2016">2016 (Histórico)</option>
+                  <option value="2018">2018 (Histórico)</option>
+                  <option value="2020">2020 (Histórico)</option>
+                  <option value="2022">2022 (Histórico)</option>
+                  <option value="2024">2024 (Recente)</option>
+                </optgroup>
+                <optgroup label="Bases Google Earth">
+                  <option value="google_sat">Google Earth Satélite HD (Atual)</option>
+                  <option value="google_hybrid">Google Earth Híbrido (Satélite + Vias)</option>
+                  <option value="google_terrain">Google Earth Relevo / Terreno</option>
+                </optgroup>
+                <optgroup label="Outras Bases">
+                  <option value="2026_esri">Esri World Imagery (Atual)</option>
+                </optgroup>
               </select>
             </div>
             <div class="swipe-select-box">
-              <label for="swipe-select-right">Lado Direito (Atual / Recente):</label>
+              <label for="swipe-select-right">Lado Direito:</label>
               <select id="swipe-select-right" class="swipe-select">
-                <option value="2026_google" selected>Google Satélite HD (Atual 2026)</option>
-                <option value="2026_esri">Esri Satélite (Atual 2026)</option>
-                <option value="2024">2024 (Recente)</option>
-                <option value="2022">2022 (Histórico)</option>
-                <option value="2020">2020 (Histórico)</option>
+                <optgroup label="Bases Google Earth">
+                  <option value="google_sat" selected>Google Earth Satélite HD (Atual)</option>
+                  <option value="google_hybrid">Google Earth Híbrido (Satélite + Vias)</option>
+                  <option value="google_terrain">Google Earth Relevo / Terreno</option>
+                </optgroup>
+                <optgroup label="Série Histórica Satélite (DigitalGlobe / Maxar)">
+                  <option value="2024">2024 (Recente)</option>
+                  <option value="2022">2022 (Histórico)</option>
+                  <option value="2020">2020 (Histórico)</option>
+                  <option value="2018">2018 (Histórico)</option>
+                  <option value="2016">2016 (Histórico)</option>
+                  <option value="2014">2014 (Histórico Inicial)</option>
+                </optgroup>
+                <optgroup label="Outras Bases">
+                  <option value="2026_esri">Esri World Imagery (Atual)</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -565,6 +586,12 @@
             <input type="checkbox" id="swipe-toggle-cadastre" checked>
             <span>Sobrepor Lotes</span>
           </label>
+          <button class="swipe-btn-earth" onclick="openCurrentInGoogleEarth()" title="Abrir localização exata no Google Earth 3D oficial">
+            <i class="fa-solid fa-earth-americas"></i> Google Earth 3D
+          </button>
+          <button class="swipe-btn-earth" onclick="openCurrentInGoogleTimelapse()" title="Visualizar histórico de Timelapse no Google Earth Engine">
+            <i class="fa-solid fa-play"></i> Timelapse
+          </button>
           <button class="swipe-btn-close" onclick="toggleSwipeTool(false)" title="Fechar Comparador Temporal (Esc)">
             <i class="fa-solid fa-xmark"></i> Fechar
           </button>

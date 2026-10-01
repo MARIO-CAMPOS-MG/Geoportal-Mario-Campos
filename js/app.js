@@ -281,70 +281,100 @@ function initBasemaps() {
    2.1. FERRAMENTA DE COMPARAÇÃO TEMPORAL: CORTINA DESLIZANTE (SWIPE)
    ========================================================== */
 const TemporalSatellites = {
-  '2014': {
-    name: '2014 (Histórico Inicial)',
-    badge: '2014 (Histórico Inicial)',
-    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/5844/{z}/{y}/{x}',
-    maxNativeZoom: 19,
-    maxZoom: 22,
-    attribution: 'Esri Wayback 2014 &copy; Esri, DigitalGlobe'
-  },
-  '2016': {
-    name: '2016 (Histórico)',
-    badge: '2016 (Histórico)',
-    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/18966/{z}/{y}/{x}',
-    maxNativeZoom: 19,
-    maxZoom: 22,
-    attribution: 'Esri Wayback 2016 &copy; Esri, DigitalGlobe'
-  },
-  '2018': {
-    name: '2018 (Histórico)',
-    badge: '2018 (Histórico)',
-    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/23448/{z}/{y}/{x}',
-    maxNativeZoom: 19,
-    maxZoom: 22,
-    attribution: 'Esri Wayback 2018 &copy; Esri, DigitalGlobe'
-  },
-  '2020': {
-    name: '2020 (Histórico)',
-    badge: '2020 (Histórico)',
-    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/29260/{z}/{y}/{x}',
-    maxNativeZoom: 19,
-    maxZoom: 22,
-    attribution: 'Esri Wayback 2020 &copy; Esri, Maxar'
-  },
-  '2022': {
-    name: '2022 (Histórico)',
-    badge: '2022 (Histórico)',
-    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/45134/{z}/{y}/{x}',
-    maxNativeZoom: 19,
-    maxZoom: 22,
-    attribution: 'Esri Wayback 2022 &copy; Esri, Maxar'
-  },
-  '2024': {
-    name: '2024 (Recente)',
-    badge: '2024 (Recente)',
-    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/16453/{z}/{y}/{x}',
-    maxNativeZoom: 19,
-    maxZoom: 22,
-    attribution: 'Esri Wayback 2024 &copy; Esri, Maxar'
-  },
-  '2026_google': {
-    name: 'Google Satélite HD (Atual 2026)',
-    badge: '2026 (Google Sat HD)',
+  // Bases Google Earth
+  'google_sat': {
+    name: 'Google Earth Satélite HD (Atual)',
+    badge: 'Google Earth Satélite HD',
     url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
     subdomains: '0123',
     maxNativeZoom: 20,
     maxZoom: 22,
-    attribution: '&copy; Google'
+    attribution: '&copy; Google Earth / Maxar'
+  },
+  'google_hybrid': {
+    name: 'Google Earth Híbrido (Satélite + Vias)',
+    badge: 'Google Earth Híbrido',
+    url: 'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    subdomains: '0123',
+    maxNativeZoom: 20,
+    maxZoom: 22,
+    attribution: '&copy; Google Earth / Maxar'
+  },
+  'google_terrain': {
+    name: 'Google Earth Relevo / Terreno',
+    badge: 'Google Earth Relevo',
+    url: 'https://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    subdomains: '0123',
+    maxNativeZoom: 18,
+    maxZoom: 22,
+    attribution: '&copy; Google Earth'
+  },
+  // Série Histórica Multitemporal (Satélites DigitalGlobe / Maxar - mesmo fornecedor do Google Earth)
+  '2014': {
+    name: '2014 (Histórico DigitalGlobe)',
+    badge: '2014 (DigitalGlobe)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/5844/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2014 &copy; DigitalGlobe / Maxar'
+  },
+  '2016': {
+    name: '2016 (Histórico DigitalGlobe)',
+    badge: '2016 (DigitalGlobe)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/18966/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2016 &copy; DigitalGlobe / Maxar'
+  },
+  '2018': {
+    name: '2018 (Histórico DigitalGlobe)',
+    badge: '2018 (DigitalGlobe)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/23448/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2018 &copy; DigitalGlobe / Maxar'
+  },
+  '2020': {
+    name: '2020 (Histórico Maxar)',
+    badge: '2020 (Maxar)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/29260/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2020 &copy; Maxar'
+  },
+  '2022': {
+    name: '2022 (Histórico Maxar)',
+    badge: '2022 (Maxar)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/45134/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2022 &copy; Maxar'
+  },
+  '2024': {
+    name: '2024 (Recente Maxar)',
+    badge: '2024 (Maxar)',
+    url: 'https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/16453/{z}/{y}/{x}',
+    maxNativeZoom: 19,
+    maxZoom: 22,
+    attribution: 'Esri Wayback 2024 &copy; Maxar'
   },
   '2026_esri': {
-    name: 'Esri Satélite (Atual 2026)',
-    badge: '2026 (Esri Atual)',
+    name: 'Esri World Imagery (Atual)',
+    badge: 'Esri World Imagery',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     maxNativeZoom: 19,
     maxZoom: 22,
-    attribution: 'Tiles &copy; Esri'
+    attribution: 'Tiles &copy; Esri / Maxar'
+  },
+  // Alias de compatibilidade
+  '2026_google': {
+    name: 'Google Earth Satélite HD (Atual)',
+    badge: 'Google Earth Satélite HD',
+    url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    subdomains: '0123',
+    maxNativeZoom: 20,
+    maxZoom: 22,
+    attribution: '&copy; Google Earth / Maxar'
   }
 };
 
@@ -466,7 +496,7 @@ function initSwipeTool() {
       map.removeLayer(AppState.swipeState.rightLayer);
       AppState.swipeState.rightLayer = null;
     }
-    const info = TemporalSatellites[yearKey] || TemporalSatellites['2026_google'];
+    const info = TemporalSatellites[yearKey] || TemporalSatellites['google_sat'] || TemporalSatellites['2026_google'];
     const opts = {
       pane: 'swipe-right-pane',
       maxNativeZoom: info.maxNativeZoom || 20,
@@ -531,7 +561,7 @@ function initSwipeTool() {
       AppState.swipeState.positionRatio = 0.5;
 
       loadLeftLayer(selectLeft ? selectLeft.value : '2014');
-      loadRightLayer(selectRight ? selectRight.value : '2026_google');
+      loadRightLayer(selectRight ? selectRight.value : 'google_sat');
 
       setTimeout(() => {
         updateClip();
@@ -576,6 +606,21 @@ function initSwipeTool() {
     }
   };
 }
+
+// Ações externas de navegação no Google Earth 3D e Google Earth Timelapse
+window.openCurrentInGoogleEarth = function() {
+  const center = AppState.map.getCenter();
+  const zoom = AppState.map.getZoom();
+  const altitude = Math.round(591657550 / Math.pow(2, zoom));
+  const earthUrl = `https://earth.google.com/web/@${center.lat.toFixed(5)},${center.lng.toFixed(5)},760a,${altitude}d,35y,0h,0t,0r`;
+  window.open(earthUrl, '_blank');
+};
+
+window.openCurrentInGoogleTimelapse = function() {
+  const center = AppState.map.getCenter();
+  const timelapseUrl = `https://earthengine.google.com/timelapse#v=${center.lat.toFixed(5)},${center.lng.toFixed(5)},13,latLng&t=3.5`;
+  window.open(timelapseUrl, '_blank');
+};
 
 /* ==========================================================
    2.5 RÓTULOS CADASTRAIS E CENTRÓIDES (LOTES & QUADRAS)
