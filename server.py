@@ -22,52 +22,29 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         if self.path == '/api/sync-shapefiles':
             try:
-                script_path = os.path.join(DIRECTORY, "build_geoportal_data.py")
-                if not os.path.exists(script_path):
-                    self.send_response(404)
-                    self.send_header('Content-Type', 'application/json; charset=utf-8')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({"success": False, "error": "Script build_geoportal_data.py não encontrado."}, ensure_ascii=False).encode('utf-8'))
-                    return
-
-                # Define o interpretador Python (usa python-qgis.bat se disponível, ou sys.executable)
-                qgis_bat = r"C:\Program Files\QGIS 3.36.2\bin\python-qgis.bat"
-                if os.path.exists(qgis_bat):
-                    cmd = [qgis_bat, script_path]
-                else:
-                    cmd = [sys.executable, script_path]
-
-                print("\n[SYNC] Reprocessando shapefiles cadastrais a pedido do usuário...")
-                result = subprocess.run(
-                    cmd,
-                    cwd=DIRECTORY,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    encoding='utf-8',
-                    errors='replace'
-                )
-
-                if result.returncode == 0:
-                    print("[SYNC] Shapefiles reprocessados com sucesso!")
+                import sync_manager
+                print("\n[SYNC] Solicitação de sincronização recebida pela interface do Geoportal...")
+                res = sync_manager.sync_full_pipeline("update(shapefiles): sincronizacao manual via interface do Geoportal")
+                
+                if res.get("success"):
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json; charset=utf-8')
                     self.end_headers()
                     resp = {
                         "success": True,
-                        "message": "Base cartográfica e cadastral atualizada com sucesso a partir dos Shapefiles originais!",
-                        "details": result.stdout[-600:] if result.stdout else ""
+                        "message": res.get("message", "Base cartográfica e cadastral atualizada localmente e publicada no Geoportal Online!"),
+                        "changed": res.get("changed", True),
+                        "details": res.get("push_results", {})
                     }
                     self.wfile.write(json.dumps(resp, ensure_ascii=False).encode('utf-8'))
                 else:
-                    print(f"[SYNC] Erro ao reprocessar: {result.stderr}")
                     self.send_response(500)
                     self.send_header('Content-Type', 'application/json; charset=utf-8')
                     self.end_headers()
                     resp = {
                         "success": False,
-                        "error": "Falha na execução do processamento de shapefiles.",
-                        "details": result.stderr[-600:] if result.stderr else result.stdout[-600:]
+                        "error": res.get("error", "Falha durante o processamento ou envio online."),
+                        "details": res.get("details", "")
                     }
                     self.wfile.write(json.dumps(resp, ensure_ascii=False).encode('utf-8'))
             except Exception as e:
@@ -104,9 +81,13 @@ def run_server():
     print(f">> Acessando: {url}")
     print("\n>> Abrindo navegador padrão...")
     print(">> Pressione Ctrl+C para encerrar o servidor.\n")
-    print("=" * 65)
-
-    webbrowser.open(url)
+    # Inicia observador automático de shapefiles em segundo plano
+    try:
+        import sync_manager
+        sync_manager.start_auto_watcher(interval_seconds=15)
+        print(">> [AUTO-SYNC] Observador ativo: alterações em shapefiles serão sincronizadas automaticamente com o Geoportal Online.")
+    except Exception as e:
+        print(f">> [AVISO] Observador automático não pôde ser iniciado: {e}")
 
     try:
         server.serve_forever()

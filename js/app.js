@@ -2464,13 +2464,13 @@ function initUIControls() {
   if (btnSyncShapefiles) {
     btnSyncShapefiles.addEventListener('click', async () => {
       const confirmSync = confirm(
-        "Deseja atualizar a base de dados do Geoportal a partir dos Shapefiles originais?\n\n" +
-        "Esta ação irá ler as pastas de mapeamento e atualizar lotes, quadras, vias e bairros no sistema."
+        "Deseja reprocessar os Shapefiles da pasta de mapeamento e sincronizar as alterações diretamente no Geoportal Online (GitHub Pages)?\n\n" +
+        "Esta ação irá atualizar os lotes, quadras, vias e bairros no Geoportal Local e enviar automaticamente as novidades para a versão online oficial."
       );
       if (!confirmSync) return;
 
       const originalHtml = btnSyncShapefiles.innerHTML;
-      btnSyncShapefiles.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> <span>Atualizando...</span>';
+      btnSyncShapefiles.innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> <span>Sincronizando Online...</span>';
       btnSyncShapefiles.classList.add('syncing');
 
       // Exibe indicador de carregamento
@@ -2478,7 +2478,7 @@ function initUIControls() {
       if (loadingEl) {
         loadingEl.style.display = 'flex';
         const span = loadingEl.querySelector('span');
-        if (span) span.textContent = 'Reprocessando Shapefiles cadastrais originais...';
+        if (span) span.textContent = 'Reprocessando Shapefiles e sincronizando com o Geoportal Online...';
       }
 
       try {
@@ -2489,20 +2489,20 @@ function initUIControls() {
 
         if (response.ok) {
           const res = await response.json();
-          alert(`Atualização concluída com sucesso!\n\n${res.message || 'Os dados foram reprocessados a partir dos Shapefiles.'}`);
+          alert(`Sincronização concluída com sucesso!\n\n${res.message || 'Os dados foram reprocessados e enviados para o Geoportal Online.'}\n\nO Geoportal Online estará atualizado no link:\nhttps://mario-campos-mg.github.io/Geoportal-Mario-Campos/`);
           // Recarrega todos os dados cartográficos dinamicamente no mapa
           await loadAllData();
         } else {
           // Servidor estático (como GitHub Pages) ou erro de execução local
           alert(
-            "A sincronização direta com os arquivos Shapefile locais requer a execução pelo script INICIAR_GEOPORTAL.bat no seu computador.\n\n" +
-            "Se você está utilizando a versão online (GitHub Pages) ou se o servidor local não pôde processar, execute o arquivo ATUALIZAR_SHAPEFILES.bat na pasta do projeto e envie as alterações para o GitHub."
+            "A sincronização direta a partir dos arquivos Shapefile locais requer a execução local pelo script INICIAR_GEOPORTAL.bat no seu computador.\n\n" +
+            "Se você está utilizando a versão online ou se o servidor local estiver offline, execute o arquivo ATUALIZAR_SHAPEFILES.bat na pasta do sistema para reprocessar e publicar online."
           );
         }
       } catch (err) {
         alert(
-          "Não foi possível conectar ao serviço de atualização local.\n\n" +
-          "Certifique-se de que o Geoportal foi iniciado com o script INICIAR_GEOPORTAL.bat. Caso prefira atualizar diretamente, dê um duplo clique no arquivo ATUALIZAR_SHAPEFILES.bat na pasta do sistema."
+          "Não foi possível conectar ao serviço de sincronização local.\n\n" +
+          "Certifique-se de que o Geoportal foi iniciado com o script INICIAR_GEOPORTAL.bat. Você também pode atualizar diretamente dando duplo clique em ATUALIZAR_SHAPEFILES.bat na pasta do projeto."
         );
       } finally {
         btnSyncShapefiles.innerHTML = originalHtml;
