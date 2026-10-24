@@ -147,11 +147,11 @@
               <div class="layer-item">
                 <div class="layer-item-top">
                   <label class="layer-label" for="toggle-cadastral-labels">
-                    <input type="checkbox" class="layer-checkbox" id="toggle-cadastral-labels">
+                    <input type="checkbox" class="layer-checkbox" id="toggle-cadastral-labels" checked>
                     <span class="layer-swatch" style="background:#ffffff;border:2px solid #000000;display:inline-flex;align-items:center;justify-content:center;color:#000000;font-size:9px;font-weight:900;border-radius:50%;width:16px;height:16px;box-sizing:border-box;">12</span>
                     <span style="font-weight:600;color:#0284c7;">Numeração (Lotes & Quadras)</span>
                   </label>
-                  <span class="layer-count-badge" id="badge-labels" style="background:#f1f5f9;color:#64748b;">Desativado</span>
+                  <span class="layer-count-badge" id="badge-labels" style="background:#dcfce7;color:#15803d;">Ativo</span>
                 </div>
               </div>
 
@@ -703,6 +703,56 @@
           <span>Carregando visão 360° no local...</span>
         </div>
         <iframe id="streetview-iframe" class="streetview-iframe" src="" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================
+       MODAL DE IMPRESSÃO DA FICHA CADASTRAL / BOLETIM (BIC)
+       ======================================================= -->
+  <div id="cadastre-print-modal" class="cadastre-print-modal" style="display:none;">
+    <div class="print-modal-backdrop" onclick="closeCadastrePrintModal()"></div>
+    <div class="print-modal-dialog">
+      <!-- Barra de ferramentas superior (Oculta na impressão A4) -->
+      <div class="print-modal-toolbar no-print">
+        <div class="print-toolbar-brand">
+          <div class="print-toolbar-icon">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+          <div>
+            <div class="print-toolbar-title">Boletim de Informações Cadastrais (BIC)</div>
+            <div class="print-toolbar-sub">Visualização Oficial Pré-impressão &bull; Certidão Cadastral A4</div>
+          </div>
+        </div>
+
+        <div class="print-toolbar-controls">
+          <div class="print-basemap-group">
+            <span class="print-basemap-label">Fundo do Mapa:</span>
+            <div class="print-basemap-buttons">
+              <button type="button" class="btn-print-basemap active" id="btn-print-basemap-carto" onclick="switchPrintBasemap('carto')" title="Mapa Cartográfico Vetorial (Ideal para impressão)">
+                <i class="fa-solid fa-map"></i> Cartográfico
+              </button>
+              <button type="button" class="btn-print-basemap" id="btn-print-basemap-sat" onclick="switchPrintBasemap('sat')" title="Imagem de Satélite HD Google">
+                <i class="fa-solid fa-satellite"></i> Satélite HD
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="btn-print-action primary" onclick="printCadastreDocument()" title="Abrir caixa de diálogo para imprimir ou salvar como PDF">
+            <i class="fa-solid fa-print"></i>
+            <span>Imprimir / Salvar em PDF</span>
+          </button>
+          <button type="button" class="btn-print-action close" onclick="closeCadastrePrintModal()" title="Fechar Visualização">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Área de visualização rolável -->
+      <div class="print-modal-scroll" id="print-modal-scroll">
+        <div id="cadastre-sheet-printable" class="cadastre-sheet">
+          <!-- Conteúdo gerado dinamicamente via JavaScript -->
+        </div>
       </div>
     </div>
   </div>
