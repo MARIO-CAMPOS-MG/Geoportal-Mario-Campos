@@ -1085,6 +1085,10 @@ function openCadastrePopup(feat, layer) {
   if (AppState.measureState && AppState.measureState.active) return;
   const p = feat.properties || {};
   
+  // Salva a feição selecionada para impressão direta
+  AppState.currentLotFeature = feat;
+  window._currentPopupFeature = feat;
+
   // Destacar lote selecionado
   AppState.highlightLayer.clearLayers();
   AppState.highlightLayer.addData(feat);
@@ -1164,7 +1168,7 @@ function openCadastrePopup(feat, layer) {
         ${allRowsHtml}
       </div>
       <div class="popup-footer">
-        <button class="popup-btn-copy" style="color:#0284c7;border-color:#bae6fd;background:#f0f9ff;font-weight:700;" onclick="openPrintCadastreSheet('${encodeURIComponent(JSON.stringify(feat))}')">
+        <button class="popup-btn-copy" style="color:#0284c7;border-color:#bae6fd;background:#f0f9ff;font-weight:700;" onclick="openPrintCadastreSheet()">
           <i class="fa-solid fa-print"></i> Imprimir Ficha / BIC
         </button>
         <button class="popup-btn-copy" onclick="copyAllProperties('${encodeURIComponent(jsonStr)}')">
@@ -2543,6 +2547,18 @@ function initUIControls() {
    ========================================================== */
 
 /**
+ * Converte qualquer representação de ponto para objeto L.LatLng válido
+ */
+function toLatLng(pt) {
+  if (!pt) return null;
+  if (pt instanceof L.LatLng) return pt;
+  if (typeof pt.lat === 'number' && typeof pt.lng === 'number') {
+    return L.latLng(pt.lat, pt.lng);
+  }
+  return null;
+}
+
+/**
  * Calcula o perímetro de uma geometria GeoJSON em metros
  */
 function calculateFeaturePerimeter(geom) {
@@ -2569,8 +2585,9 @@ function calculateFeaturePerimeter(geom) {
  */
 function findConfrontingLots(targetFeat, maxCount = 6) {
   if (!AppState.data.lotes || !AppState.data.lotes.features) return [];
-  const tCenter = targetFeat._center || getGeometryBBoxCenter(targetFeat.geometry);
-  if (!tCenter) return [];
+  const rawTCenter = targetFeat._center || getGeometryBBoxCenter(targetFeat.geometry);
+  const tLatLng = toLatLng(rawTCenter);
+  if (!tLatLng) return [];
 
   const targetInsc = targetFeat.properties ? targetFeat.properties.insc_imob : null;
   const targetLote = targetFeat.properties ? targetFeat.properties.lote : null;
@@ -2583,20 +2600,18 @@ function findConfrontingLots(targetFeat, maxCount = 6) {
     const f = all[i];
     const p = f.properties || {};
 
-    // Pula o próprio lote
     if (targetInsc && p.insc_imob === targetInsc) continue;
     if (targetLote && targetQuadra && p.lote === targetLote && p.quadra === targetQuadra) continue;
 
-    const fCenter = f._center || getGeometryBBoxCenter(f.geometry);
-    if (!fCenter) continue;
+    const rawFCenter = f._center || getGeometryBBoxCenter(f.geometry);
+    const fLatLng = toLatLng(rawFCenter);
+    if (!fLatLng) continue;
 
-    const dist = tCenter.distanceTo(fCenter);
-    // Limite de raio imediato (confrontantes diretos até ~75m)
+    const dist = tLatLng.distanceTo(fLatLng);
     if (dist > 75) continue;
 
-    // Determina a direção cardinal relativa
-    const dLat = fCenter.lat - tCenter.lat;
-    const dLng = fCenter.lng - tCenter.lng;
+    const dLat = fLatLng.lat - tLatLng.lat;
+    const dLng = fLatLng.lng - tLatLng.lng;
     const deg = (Math.atan2(dLat, dLng) * 180 / Math.PI + 360) % 360;
 
     let pos = 'Confrontante Lateral';
@@ -2618,7 +2633,6 @@ function findConfrontingLots(targetFeat, maxCount = 6) {
     });
   }
 
-  // Ordena por maior proximidade física
   neighbors.sort((a, b) => a.dist - b.dist);
   return neighbors.slice(0, maxCount);
 }
@@ -2628,8 +2642,9 @@ function findConfrontingLots(targetFeat, maxCount = 6) {
  */
 function findNearbyStreets(targetFeat, maxDist = 80) {
   if (!AppState.data.vias || !AppState.data.vias.features) return [];
-  const tCenter = targetFeat._center || getGeometryBBoxCenter(targetFeat.geometry);
-  if (!tCenter) return [];
+  const rawTCenter = targetFeat._center || getGeometryBBoxCenter(targetFeat.geometry);
+  const tLatLng = toLatLng(rawTCenter);
+  if (!tLatLng) return [];
 
   const foundNames = new Set();
   const vias = AppState.data.vias.features;
@@ -2647,7 +2662,7 @@ function findNearbyStreets(targetFeat, maxDist = 80) {
     for (let j = 0; j < coords.length; j += 2) {
       const pt = coords[j];
       if (pt && typeof pt[0] === 'number') {
-        if (tCenter.distanceTo(L.latLng(pt[1], pt[0])) <= maxDist) {
+        if (tLatLng.distanceTo(L.latLng(pt[1], pt[0])) <= maxDist) {
           isClose = true;
           break;
         }
@@ -2664,509 +2679,522 @@ function findNearbyStreets(targetFeat, maxDist = 80) {
  * Abre o modal de emissão e impressão do Boletim de Informações Cadastrais (BIC)
  */
 function openPrintCadastreSheet(featInput) {
-  let feat = featInput;
-  if (typeof featInput === 'string') {
-    try {
-      feat = JSON.parse(decodeURIComponent(featInput));
-    } catch(e) {
+  try {
+    let feat = featInput;
+    if (typeof feat === 'string' && feat.trim()) {
       try {
-        feat = JSON.parse(featInput);
-      } catch(err) {
-        console.error('Erro ao ler feição cadastral para impressão:', err);
-        return;
+        feat = JSON.parse(decodeURIComponent(feat));
+      } catch(e) {
+        try { feat = JSON.parse(feat); } catch(err) {}
       }
     }
-  }
-  if (!feat) return;
-
-  const p = feat.properties || {};
-  const lote = p.lote ? String(p.lote).replace(/\.$/, '').replace(/^0+/, '') || String(p.lote).replace(/\.$/, '') : '-';
-  const quadra = p.quadra ? String(p.quadra).replace(/\.$/, '').replace(/^0+/, '') || String(p.quadra).replace(/\.$/, '') : '-';
-  const bairro = p.nome_bairro || (p.bairro_pasta ? p.bairro_pasta.replace(/^\d+_/, '') : 'MÁRIO CAMPOS');
-  const cleanInsc = p.insc_imob ? String(p.insc_imob).replace(/\.{2,}/g, '.') : 'Não cadastrada';
-
-  const center = feat._center || getGeometryBBoxCenter(feat.geometry) || AppState.map.getCenter();
-
-  // Coordenadas UTM SIRGAS 2000 Zona 23S
-  let utmX = '-', utmY = '-';
-  try {
-    if (window.proj4) {
-      const utm = proj4("EPSG:4326", "EPSG:31983", [center.lng, center.lat]);
-      utmX = Math.round(utm[0]).toLocaleString('pt-BR');
-      utmY = Math.round(utm[1]).toLocaleString('pt-BR');
+    if (!feat) {
+      feat = AppState.currentLotFeature || window._currentPopupFeature;
     }
-  } catch (err) {}
-
-  // Cálculo da Área (Cadastrada ou Georreferenciada)
-  let areaVal = null;
-  if (p.area_m2 && !isNaN(Number(p.area_m2)) && Number(p.area_m2) > 0) {
-    areaVal = Number(p.area_m2);
-  } else if (feat.geometry) {
-    let ring = [];
-    if (feat.geometry.type === 'Polygon' && feat.geometry.coordinates) ring = feat.geometry.coordinates[0];
-    else if (feat.geometry.type === 'MultiPolygon' && feat.geometry.coordinates && feat.geometry.coordinates[0]) ring = feat.geometry.coordinates[0][0];
-    if (ring && ring.length >= 3) {
-      const latlngs = ring.map(c => L.latLng(c[1], c[0]));
-      areaVal = calculatePolygonArea(latlngs);
+    if (!feat && AppState.highlightLayer && AppState.highlightLayer.getLayers().length > 0) {
+      feat = AppState.highlightLayer.getLayers()[0].feature;
     }
-  }
+    if (!feat) {
+      alert("Por favor, clique em um lote no mapa antes de solicitar a impressão da ficha cadastral.");
+      return;
+    }
 
-  let areaDisplay = areaVal !== null
-    ? `${areaVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`
-    : 'Não calculada';
-  if (areaVal && areaVal >= 10000) {
-    areaDisplay += ` (${(areaVal / 10000).toFixed(2)} ha)`;
-  }
+    const p = feat.properties || {};
+    const lote = p.lote ? String(p.lote).replace(/\.$/, '').replace(/^0+/, '') || String(p.lote).replace(/\.$/, '') : '-';
+    const quadra = p.quadra ? String(p.quadra).replace(/\.$/, '').replace(/^0+/, '') || String(p.quadra).replace(/\.$/, '') : '-';
+    const bairro = p.nome_bairro || (p.bairro_pasta ? p.bairro_pasta.replace(/^\d+_/, '') : 'MÁRIO CAMPOS');
+    const cleanInsc = p.insc_imob ? String(p.insc_imob).replace(/\.{2,}/g, '.') : 'Não cadastrada';
 
-  // Cálculo do Perímetro
-  const perimeterVal = calculateFeaturePerimeter(feat.geometry);
-  const perimeterDisplay = perimeterVal > 0
-    ? `${perimeterVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`
-    : 'Não calculado';
+    const rawCenter = feat._center || getGeometryBBoxCenter(feat.geometry);
+    const center = toLatLng(rawCenter) || AppState.map.getCenter();
+    feat._center = center;
 
-  // Confrontantes
-  const confrontantes = findConfrontingLots(feat, 5);
-  let confrontantesHtml = '';
-  if (confrontantes.length > 0) {
-    confrontantes.forEach(c => {
-      confrontantesHtml += `
-        <li class="bic-confrontante-item">
-          <span class="conf-badge">${c.pos}</span>
-          <span class="conf-lot"><b>Lote ${c.lote}</b> &bull; Quadra ${c.quadra}</span>
-          <span class="conf-dist">${Math.round(c.dist)}m</span>
-        </li>
-      `;
-    });
-  } else {
-    confrontantesHtml = '<li class="bic-empty-msg">Nenhum lote confrontante vizinho registrado na base imediata.</li>';
-  }
+    // Coordenadas UTM SIRGAS 2000 Zona 23S
+    let utmX = '-', utmY = '-';
+    try {
+      if (window.proj4) {
+        const utm = proj4("EPSG:4326", "EPSG:31983", [center.lng, center.lat]);
+        utmX = Math.round(utm[0]).toLocaleString('pt-BR');
+        utmY = Math.round(utm[1]).toLocaleString('pt-BR');
+      }
+    } catch (err) {}
 
-  // Vias de Confrontação
-  const nearbyStreets = findNearbyStreets(feat, 75);
-  let viasHtml = '';
-  if (nearbyStreets.length > 0) {
-    viasHtml = nearbyStreets.map(st => `<div class="bic-via-tag"><i class="fa-solid fa-road"></i> ${st}</div>`).join('');
-  } else {
-    viasHtml = '<div class="bic-empty-msg"><i class="fa-solid fa-map-pin"></i> Logradouro local de acesso sem denominação oficial registrada na malha.</div>';
-  }
+    // Cálculo da Área (Cadastrada ou Georreferenciada)
+    let areaVal = null;
+    if (p.area_m2 && !isNaN(Number(p.area_m2)) && Number(p.area_m2) > 0) {
+      areaVal = Number(p.area_m2);
+    } else if (feat.geometry) {
+      let ring = [];
+      if (feat.geometry.type === 'Polygon' && feat.geometry.coordinates) ring = feat.geometry.coordinates[0];
+      else if (feat.geometry.type === 'MultiPolygon' && feat.geometry.coordinates && feat.geometry.coordinates[0]) ring = feat.geometry.coordinates[0][0];
+      if (ring && ring.length >= 3) {
+        const latlngs = ring.map(c => L.latLng(c[1], c[0]));
+        areaVal = calculatePolygonArea(latlngs);
+      }
+    }
 
-  // Código de Autenticação / Protocolo Oficial
-  const now = new Date();
-  const year = now.getFullYear();
-  const hexHash = Math.abs((center.lat * 1000000 + center.lng * 1000000 + Date.now()) % 0xFFFFFFF).toString(16).toUpperCase().padStart(8, '0');
-  const authCode = `BIC-MC-${year}-${hexHash.substring(0, 4)}-${hexHash.substring(4)}`;
-  const issueDateTime = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
-  const issueDate = now.toLocaleDateString('pt-BR');
+    let areaDisplay = areaVal !== null
+      ? `${areaVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`
+      : 'Não calculada';
+    if (areaVal && areaVal >= 10000) {
+      areaDisplay += ` (${(areaVal / 10000).toFixed(2)} ha)`;
+    }
 
-  // Montagem da Folha A4 Oficial
-  const sheetContainer = document.getElementById('cadastre-sheet-printable');
-  if (!sheetContainer) return;
+    // Cálculo do Perímetro
+    const perimeterVal = calculateFeaturePerimeter(feat.geometry);
+    const perimeterDisplay = perimeterVal > 0
+      ? `${perimeterVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`
+      : 'Não calculado';
 
-  sheetContainer.innerHTML = `
-    <div class="bic-container">
-      <!-- CABEÇALHO INSTITUCIONAL -->
-      <div class="bic-header">
-        <div class="bic-header-left">
-          <img src="assets/logo_prefeitura.png" alt="Prefeitura Municipal de Mário Campos" class="bic-logo">
-          <div class="bic-header-text">
-            <div class="bic-gov">ESTADO DE MINAS GERAIS</div>
-            <div class="bic-pref">PREFEITURA MUNICIPAL DE MÁRIO CAMPOS</div>
-            <div class="bic-sec">SECRETARIA MUNICIPAL DE OBRAS, REGULAÇÃO URBANA E CADASTRO</div>
-            <div class="bic-dept">DIVISÃO DE TRIBUTAÇÃO, FISCALIZAÇÃO E CADASTRO TÉCNICO IMOBILIÁRIO (CTI)</div>
-          </div>
-        </div>
-        <div class="bic-header-meta">
-          <div class="bic-doc-title">BOLETIM DE INFORMAÇÕES CADASTRARIAIS (BIC)</div>
-          <div class="bic-doc-sub">ESPELHO CADASTRAL E CERTIDÃO DE DADOS DO IMÓVEL</div>
-          <div class="bic-protocol-box">
-            <div class="bic-proto-item">
-              <span class="lbl">Controle / Chave:</span>
-              <span class="val mono">${authCode}</span>
+    // Confrontantes
+    const confrontantes = findConfrontingLots(feat, 5);
+    let confrontantesHtml = '';
+    if (confrontantes.length > 0) {
+      confrontantes.forEach(c => {
+        confrontantesHtml += `
+          <li class="bic-confrontante-item">
+            <span class="conf-badge">${c.pos}</span>
+            <span class="conf-lot"><b>Lote ${c.lote}</b> &bull; Quadra ${c.quadra}</span>
+            <span class="conf-dist">${Math.round(c.dist)}m</span>
+          </li>
+        `;
+      });
+    } else {
+      confrontantesHtml = '<li class="bic-empty-msg">Nenhum lote confrontante vizinho registrado na base imediata.</li>';
+    }
+
+    // Vias de Confrontação
+    const nearbyStreets = findNearbyStreets(feat, 75);
+    let viasHtml = '';
+    if (nearbyStreets.length > 0) {
+      viasHtml = nearbyStreets.map(st => `<div class="bic-via-tag"><i class="fa-solid fa-road"></i> ${st}</div>`).join('');
+    } else {
+      viasHtml = '<div class="bic-empty-msg"><i class="fa-solid fa-map-pin"></i> Logradouro local de acesso sem denominação oficial registrada na malha.</div>';
+    }
+
+    // Código de Autenticação / Protocolo Oficial
+    const now = new Date();
+    const year = now.getFullYear();
+    const hexHash = Math.abs((center.lat * 1000000 + center.lng * 1000000 + Date.now()) % 0xFFFFFFF).toString(16).toUpperCase().padStart(8, '0');
+    const authCode = `BIC-MC-${year}-${hexHash.substring(0, 4)}-${hexHash.substring(4)}`;
+    const issueDateTime = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+    const issueDate = now.toLocaleDateString('pt-BR');
+
+    // Montagem da Folha A4 Oficial
+    const sheetContainer = document.getElementById('cadastre-sheet-printable');
+    if (!sheetContainer) return;
+
+    sheetContainer.innerHTML = `
+      <div class="bic-container">
+        <!-- CABEÇALHO INSTITUCIONAL -->
+        <div class="bic-header">
+          <div class="bic-header-left">
+            <img src="assets/logo_prefeitura.png" alt="Prefeitura Municipal de Mário Campos" class="bic-logo">
+            <div class="bic-header-text">
+              <div class="bic-gov">ESTADO DE MINAS GERAIS</div>
+              <div class="bic-pref">PREFEITURA MUNICIPAL DE MÁRIO CAMPOS</div>
+              <div class="bic-sec">SECRETARIA MUNICIPAL DE OBRAS, REGULAÇÃO URBANA E CADASTRO</div>
+              <div class="bic-dept">DIVISÃO DE TRIBUTAÇÃO, FISCALIZAÇÃO E CADASTRO TÉCNICO IMOBILIÁRIO (CTI)</div>
             </div>
-            <div class="bic-proto-item">
-              <span class="lbl">Data de Emissão:</span>
-              <span class="val">${issueDateTime}</span>
-            </div>
-            <div class="bic-proto-item">
-              <span class="lbl">Situação do Cadastro:</span>
-              <span class="val badge-status">${p.situacao || 'CADASTRADO / REGULAR'}</span>
-            </div>
           </div>
-        </div>
-      </div>
-
-      <!-- SEÇÃO 1: IDENTIFICAÇÃO CADASTRAL -->
-      <div class="bic-section">
-        <div class="bic-section-title">
-          <i class="fa-solid fa-id-card"></i> 1. IDENTIFICAÇÃO CADASTRAL DO IMÓVEL
-        </div>
-        <div class="bic-grid-3">
-          <div class="bic-field highlight-box span-2">
-            <span class="bic-field-label">INSCRIÇÃO IMOBILIÁRIA (CÓDIGO CADASTRAL)</span>
-            <span class="bic-field-val mono-highlight">${cleanInsc}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">BAIRRO / LOTEAMENTO</span>
-            <span class="bic-field-val bold">${bairro}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">DISTRITO</span>
-            <span class="bic-field-val">${p.distrito || '001 - SEDE'}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">CÓDIGO DO BAIRRO</span>
-            <span class="bic-field-val">${p.bairro_cod || '-'}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">QUADRA</span>
-            <span class="bic-field-val bold">${quadra}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">LOTE</span>
-            <span class="bic-field-val bold" style="color:#0284c7;font-size:0.95rem;">${lote}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">UNIDADE</span>
-            <span class="bic-field-val">${p.unidade || '0001'}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">NÚMERO PREDIAL</span>
-            <span class="bic-field-val">${p.numero_predial || 'Não cadastrado'}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">MATRÍCULA (CRI)</span>
-            <span class="bic-field-val">${p.matricula || 'Não informada'}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">ZONEAMENTO URBANO</span>
-            <span class="bic-field-val">${p.zoneamento || 'ZONA PREDOMINANTEMENTE RESIDENCIAL'}</span>
-          </div>
-          <div class="bic-field span-2">
-            <span class="bic-field-label">TITULAR / RESPONSÁVEL DECLARADO</span>
-            <span class="bic-field-val bold">${p.titular || 'PREFEITURA MUNICIPAL / NÃO DECLARADO'}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- SEÇÃO 2: DIMENSÕES & COORDENADAS OFICIAIS -->
-      <div class="bic-section">
-        <div class="bic-section-title">
-          <i class="fa-solid fa-ruler-combined"></i> 2. DIMENSÕES FÍSICAS & COORDENADAS GEODÉSICAS (SIRGAS 2000)
-        </div>
-        <div class="bic-grid-4">
-          <div class="bic-field metric-box">
-            <span class="bic-field-label">ÁREA DO TERRENO</span>
-            <span class="bic-field-val metric-val">${areaDisplay}</span>
-          </div>
-          <div class="bic-field metric-box">
-            <span class="bic-field-label">PERÍMETRO CALCULADO</span>
-            <span class="bic-field-val metric-val">${perimeterDisplay}</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">COORD. UTM 23S (ESTE / X)</span>
-            <span class="bic-field-val mono">${utmX} m</span>
-          </div>
-          <div class="bic-field">
-            <span class="bic-field-label">COORD. UTM 23S (NORTE / Y)</span>
-            <span class="bic-field-val mono">${utmY} m</span>
-          </div>
-          <div class="bic-field full-row" style="background:#f8fafc;padding:4px 8px;font-size:0.67rem;color:#475569;">
-            <span><b>Datum Oficial:</b> SIRGAS 2000 (EPSG:31983) &bull; <b>Coordenadas Geográficas (WGS84):</b> Lat: ${center.lat.toFixed(6)}° | Lng: ${center.lng.toFixed(6)}° &bull; <b>Projeção UTM:</b> Fuso 23S</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- SEÇÃO 3: CONFRONTAÇÕES E ACESSOS -->
-      <div class="bic-section">
-        <div class="bic-section-title">
-          <i class="fa-solid fa-arrows-to-dot"></i> 3. CONFRONTAÇÕES CADASTRARIAIS E LOGRADOUROS CONFRONTANTES
-        </div>
-        <div class="bic-confrontacoes-grid">
-          <div class="bic-confrontacao-col">
-            <div class="bic-subhead"><i class="fa-solid fa-border-all"></i> Lotes Confrontantes Identificados:</div>
-            <ul class="bic-confrontantes-list">
-              ${confrontantesHtml}
-            </ul>
-          </div>
-          <div class="bic-confrontacao-col">
-            <div class="bic-subhead"><i class="fa-solid fa-road"></i> Vias Públicas e Acessos Imediatos:</div>
-            <div class="bic-vias-info">
-              ${viasHtml}
+          <div class="bic-header-meta">
+            <div class="bic-doc-title">BOLETIM DE INFORMAÇÕES CADASTRARIAIS (BIC)</div>
+            <div class="bic-doc-sub">ESPELHO CADASTRAL E CERTIDÃO DE DADOS DO IMÓVEL</div>
+            <div class="bic-protocol-box">
+              <div class="bic-proto-item">
+                <span class="lbl">Controle / Chave:</span>
+                <span class="val mono">${authCode}</span>
+              </div>
+              <div class="bic-proto-item">
+                <span class="lbl">Data de Emissão:</span>
+                <span class="val">${issueDateTime}</span>
+              </div>
+              <div class="bic-proto-item">
+                <span class="lbl">Situação do Cadastro:</span>
+                <span class="val badge-status">${p.situacao || 'CADASTRADO / REGULAR'}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- SEÇÃO 4: PLANTA DE SITUAÇÃO CADASTRAL -->
-      <div class="bic-section" style="margin-bottom:4px;">
-        <div class="bic-section-title" style="display:flex;justify-content:space-between;align-items:center;">
-          <span><i class="fa-solid fa-map-location-dot"></i> 4. PLANTA DE SITUAÇÃO CADASTRAL E LOCALIZAÇÃO ESPACIAL</span>
-          <span style="font-size:0.6rem;font-weight:600;color:#64748b;text-transform:none;">Enquadramento Oficial do Imóvel</span>
-        </div>
-        <div class="bic-map-wrapper">
-          <div id="print-cadastre-map" class="bic-map-container"></div>
-          
-          <!-- INDICADOR DO NORTE -->
-          <div class="bic-map-compass" title="Norte Geográfico">
-            <div class="compass-n">N</div>
-            <div class="compass-arrow"></div>
+        <!-- SEÇÃO 1: IDENTIFICAÇÃO CADASTRAL -->
+        <div class="bic-section">
+          <div class="bic-section-title">
+            <i class="fa-solid fa-id-card"></i> 1. IDENTIFICAÇÃO CADASTRAL DO IMÓVEL
           </div>
-
-          <!-- LEGENDA INTEGRADA AO MAPA -->
-          <div class="bic-map-legend">
-            <div class="legend-item"><span class="legend-swatch lot-target"></span> <b>Lote Objeto (Destaque)</b></div>
-            <div class="legend-item"><span class="legend-swatch lot-neighbor"></span> <b>Lotes Confrontantes</b></div>
-            <div class="legend-item"><span class="legend-swatch street-axis"></span> <b>Eixos de Ruas / Vias</b></div>
-            <div class="legend-item"><span class="legend-swatch quadra-circle">${quadra !== '-' ? quadra : '12'}</span> <b>Quadra</b></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SEÇÃO 5: VALIDAÇÃO LEGAL E ASSINATURA -->
-      <div class="bic-footer">
-        <div class="bic-footer-legal">
-          <b>Nota de Validade Legal e Cadastral:</b>
-          Documento emitido eletronicamente através do Geoportal Oficial do Município de Mário Campos - MG. As informações aqui consolidadas refletem fielmente a base de dados cartográfica e do Cadastro Técnico Imobiliário Municipal. Válido para simples conferência, instrução de processos administrativos e comprovação cadastral física.
-          <div class="bic-validation-row">
-            <span><b>Chave de Validação Digital:</b> <span class="mono" style="font-family:'JetBrains Mono',monospace;color:#0284c7;font-weight:700;">${authCode}</span></span>
-            <span><b>Data de Consulta:</b> ${issueDate}</span>
-          </div>
-        </div>
-        <div class="bic-signature-box">
-          <div class="bic-qr-placeholder">
-            <svg viewBox="0 0 100 100" class="bic-qr-svg">
-              <rect width="100" height="100" fill="#ffffff"/>
-              <!-- Elementos visuais estilizados de QR code com padrão de autenticidade -->
-              <rect x="10" y="10" width="24" height="24" fill="#0f172a"/>
-              <rect x="14" y="14" width="16" height="16" fill="#ffffff"/>
-              <rect x="18" y="18" width="8" height="8" fill="#0284c7"/>
-              
-              <rect x="66" y="10" width="24" height="24" fill="#0f172a"/>
-              <rect x="70" y="14" width="16" height="16" fill="#ffffff"/>
-              <rect x="74" y="18" width="8" height="8" fill="#0284c7"/>
-
-              <rect x="10" y="66" width="24" height="24" fill="#0f172a"/>
-              <rect x="14" y="70" width="16" height="16" fill="#ffffff"/>
-              <rect x="18" y="74" width="8" height="8" fill="#0284c7"/>
-
-              <!-- Matriz simulada de dados digitais -->
-              <rect x="42" y="12" width="6" height="6" fill="#0f172a"/>
-              <rect x="52" y="12" width="6" height="6" fill="#0f172a"/>
-              <rect x="42" y="24" width="6" height="6" fill="#0f172a"/>
-              <rect x="52" y="24" width="6" height="6" fill="#0284c7"/>
-              <rect x="42" y="42" width="16" height="16" fill="#0284c7"/>
-              <rect x="46" y="46" width="8" height="8" fill="#ffffff"/>
-              <rect x="12" y="44" width="6" height="6" fill="#0f172a"/>
-              <rect x="24" y="44" width="6" height="6" fill="#0f172a"/>
-              <rect x="66" y="44" width="6" height="6" fill="#0f172a"/>
-              <rect x="78" y="44" width="6" height="6" fill="#0f172a"/>
-              <rect x="66" y="56" width="6" height="6" fill="#0284c7"/>
-              <rect x="78" y="56" width="6" height="6" fill="#0f172a"/>
-              <rect x="42" y="66" width="6" height="6" fill="#0f172a"/>
-              <rect x="52" y="76" width="6" height="6" fill="#0284c7"/>
-              <rect x="66" y="76" width="6" height="6" fill="#0f172a"/>
-              <rect x="76" y="66" width="6" height="6" fill="#0f172a"/>
-              <rect x="84" y="84" width="6" height="6" fill="#0284c7"/>
-            </svg>
-            <span class="qr-label">AUTENTICAÇÃO</span>
-          </div>
-          <div class="bic-signature-line">
-            <div class="sig-line"></div>
-            <div class="sig-name">DIVISÃO DE CADASTRO TÉCNICO</div>
-            <div class="sig-role">Secretaria Municipal de Obras e Regulação</div>
+          <div class="bic-grid-3">
+            <div class="bic-field highlight-box span-2">
+              <span class="bic-field-label">INSCRIÇÃO IMOBILIÁRIA (CÓDIGO CADASTRAL)</span>
+              <span class="bic-field-val mono-highlight">${cleanInsc}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">BAIRRO / LOTEAMENTO</span>
+              <span class="bic-field-val bold">${bairro}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">DISTRITO</span>
+              <span class="bic-field-val">${p.distrito || '001 - SEDE'}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">CÓDIGO DO BAIRRO</span>
+              <span class="bic-field-val">${p.bairro_cod || '-'}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">QUADRA</span>
+              <span class="bic-field-val bold">${quadra}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">LOTE</span>
+              <span class="bic-field-val bold" style="color:#0284c7;font-size:0.95rem;">${lote}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">UNIDADE</span>
+              <span class="bic-field-val">${p.unidade || '0001'}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">NÚMERO PREDIAL</span>
+              <span class="bic-field-val">${p.numero_predial || 'Não cadastrado'}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">MATRÍCULA (CRI)</span>
+              <span class="bic-field-val">${p.matricula || 'Não informada'}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">ZONEAMENTO URBANO</span>
+              <span class="bic-field-val">${p.zoneamento || 'ZONA PREDOMINANTEMENTE RESIDENCIAL'}</span>
+            </div>
+            <div class="bic-field span-2">
+              <span class="bic-field-label">TITULAR / RESPONSÁVEL DECLARADO</span>
+              <span class="bic-field-val bold">${p.titular || 'PREFEITURA MUNICIPAL / NÃO DECLARADO'}</span>
+            </div>
           </div>
         </div>
+
+        <!-- SEÇÃO 2: DIMENSÕES & COORDENADAS OFICIAIS -->
+        <div class="bic-section">
+          <div class="bic-section-title">
+            <i class="fa-solid fa-ruler-combined"></i> 2. DIMENSÕES FÍSICAS & COORDENADAS GEODÉSICAS (SIRGAS 2000)
+          </div>
+          <div class="bic-grid-4">
+            <div class="bic-field metric-box">
+              <span class="bic-field-label">ÁREA DO TERRENO</span>
+              <span class="bic-field-val metric-val">${areaDisplay}</span>
+            </div>
+            <div class="bic-field metric-box">
+              <span class="bic-field-label">PERÍMETRO CALCULADO</span>
+              <span class="bic-field-val metric-val">${perimeterDisplay}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">COORD. UTM 23S (ESTE / X)</span>
+              <span class="bic-field-val mono">${utmX} m</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">COORD. UTM 23S (NORTE / Y)</span>
+              <span class="bic-field-val mono">${utmY} m</span>
+            </div>
+            <div class="bic-field full-row" style="background:#f8fafc;padding:4px 8px;font-size:0.67rem;color:#475569;">
+              <span><b>Datum Oficial:</b> SIRGAS 2000 (EPSG:31983) &bull; <b>Coordenadas Geográficas (WGS84):</b> Lat: ${center.lat.toFixed(6)}° | Lng: ${center.lng.toFixed(6)}° &bull; <b>Projeção UTM:</b> Fuso 23S</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 3: CONFRONTAÇÕES E ACESSOS -->
+        <div class="bic-section">
+          <div class="bic-section-title">
+            <i class="fa-solid fa-arrows-to-dot"></i> 3. CONFRONTAÇÕES CADASTRARIAIS E LOGRADOUROS CONFRONTANTES
+          </div>
+          <div class="bic-confrontacoes-grid">
+            <div class="bic-confrontacao-col">
+              <div class="bic-subhead"><i class="fa-solid fa-border-all"></i> Lotes Confrontantes Identificados:</div>
+              <ul class="bic-confrontantes-list">
+                ${confrontantesHtml}
+              </ul>
+            </div>
+            <div class="bic-confrontacao-col">
+              <div class="bic-subhead"><i class="fa-solid fa-road"></i> Vias Públicas e Acessos Imediatos:</div>
+              <div class="bic-vias-info">
+                ${viasHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 4: PLANTA DE SITUAÇÃO CADASTRAL -->
+        <div class="bic-section" style="margin-bottom:4px;">
+          <div class="bic-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span><i class="fa-solid fa-map-location-dot"></i> 4. PLANTA DE SITUAÇÃO CADASTRAL E LOCALIZAÇÃO ESPACIAL</span>
+            <span style="font-size:0.6rem;font-weight:600;color:#64748b;text-transform:none;">Enquadramento Oficial do Imóvel</span>
+          </div>
+          <div class="bic-map-wrapper">
+            <div id="print-cadastre-map" class="bic-map-container"></div>
+            
+            <!-- INDICADOR DO NORTE -->
+            <div class="bic-map-compass" title="Norte Geográfico">
+              <div class="compass-n">N</div>
+              <div class="compass-arrow"></div>
+            </div>
+
+            <!-- LEGENDA INTEGRADA AO MAPA -->
+            <div class="bic-map-legend">
+              <div class="legend-item"><span class="legend-swatch lot-target"></span> <b>Lote Objeto (Destaque)</b></div>
+              <div class="legend-item"><span class="legend-swatch lot-neighbor"></span> <b>Lotes Confrontantes</b></div>
+              <div class="legend-item"><span class="legend-swatch street-axis"></span> <b>Eixos de Ruas / Vias</b></div>
+              <div class="legend-item"><span class="legend-swatch quadra-circle">${quadra !== '-' ? quadra : '12'}</span> <b>Quadra</b></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO 5: VALIDAÇÃO LEGAL E ASSINATURA -->
+        <div class="bic-footer">
+          <div class="bic-footer-legal">
+            <b>Nota de Validade Legal e Cadastral:</b>
+            Documento emitido eletronicamente através do Geoportal Oficial do Município de Mário Campos - MG. As informações aqui consolidadas refletem fielmente a base de dados cartográfica e do Cadastro Técnico Imobiliário Municipal. Válido para simples conferência, instrução de processos administrativos e comprovação cadastral física.
+            <div class="bic-validation-row">
+              <span><b>Chave de Validação Digital:</b> <span class="mono" style="font-family:'JetBrains Mono',monospace;color:#0284c7;font-weight:700;">${authCode}</span></span>
+              <span><b>Data de Consulta:</b> ${issueDate}</span>
+            </div>
+          </div>
+          <div class="bic-signature-box">
+            <div class="bic-qr-placeholder">
+              <svg viewBox="0 0 100 100" class="bic-qr-svg">
+                <rect width="100" height="100" fill="#ffffff"/>
+                <rect x="10" y="10" width="24" height="24" fill="#0f172a"/>
+                <rect x="14" y="14" width="16" height="16" fill="#ffffff"/>
+                <rect x="18" y="18" width="8" height="8" fill="#0284c7"/>
+                
+                <rect x="66" y="10" width="24" height="24" fill="#0f172a"/>
+                <rect x="70" y="14" width="16" height="16" fill="#ffffff"/>
+                <rect x="74" y="18" width="8" height="8" fill="#0284c7"/>
+
+                <rect x="10" y="66" width="24" height="24" fill="#0f172a"/>
+                <rect x="14" y="70" width="16" height="16" fill="#ffffff"/>
+                <rect x="18" y="74" width="8" height="8" fill="#0284c7"/>
+
+                <rect x="42" y="12" width="6" height="6" fill="#0f172a"/>
+                <rect x="52" y="12" width="6" height="6" fill="#0f172a"/>
+                <rect x="42" y="24" width="6" height="6" fill="#0f172a"/>
+                <rect x="52" y="24" width="6" height="6" fill="#0284c7"/>
+                <rect x="42" y="42" width="16" height="16" fill="#0284c7"/>
+                <rect x="46" y="46" width="8" height="8" fill="#ffffff"/>
+                <rect x="12" y="44" width="6" height="6" fill="#0f172a"/>
+                <rect x="24" y="44" width="6" height="6" fill="#0f172a"/>
+                <rect x="66" y="44" width="6" height="6" fill="#0f172a"/>
+                <rect x="78" y="44" width="6" height="6" fill="#0f172a"/>
+                <rect x="66" y="56" width="6" height="6" fill="#0284c7"/>
+                <rect x="78" y="56" width="6" height="6" fill="#0f172a"/>
+                <rect x="42" y="66" width="6" height="6" fill="#0f172a"/>
+                <rect x="52" y="76" width="6" height="6" fill="#0284c7"/>
+                <rect x="66" y="76" width="6" height="6" fill="#0f172a"/>
+                <rect x="76" y="66" width="6" height="6" fill="#0f172a"/>
+                <rect x="84" y="84" width="6" height="6" fill="#0284c7"/>
+              </svg>
+              <span class="qr-label">AUTENTICAÇÃO</span>
+            </div>
+            <div class="bic-signature-line">
+              <div class="sig-line"></div>
+              <div class="sig-name">DIVISÃO DE CADASTRO TÉCNICO</div>
+              <div class="sig-role">Secretaria Municipal de Obras e Regulação</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RODAPÉ DA PÁGINA -->
+        <div class="bic-page-footer">
+          <span>Prefeitura Municipal de Mário Campos &bull; CNPJ: 01.613.111/0001-80 &bull; Praça da Matriz, Centro &bull; Geoportal CTI 2026</span>
+          <span>Documento Oficial &bull; Página 1 de 1</span>
+        </div>
       </div>
+    `;
 
-      <!-- RODAPÉ DA PÁGINA -->
-      <div class="bic-page-footer">
-        <span>Prefeitura Municipal de Mário Campos &bull; CNPJ: 01.613.111/0001-80 &bull; Praça da Matriz, Centro &bull; Geoportal CTI 2026</span>
-        <span>Documento Oficial &bull; Página 1 de 1</span>
-      </div>
-    </div>
-  `;
+    // Exibe o modal
+    const modal = document.getElementById('cadastre-print-modal');
+    if (modal) modal.style.display = 'flex';
 
-  // Exibe o modal
-  const modal = document.getElementById('cadastre-print-modal');
-  if (modal) modal.style.display = 'flex';
+    // Rola o container para o topo
+    const scrollArea = document.getElementById('print-modal-scroll');
+    if (scrollArea) scrollArea.scrollTop = 0;
 
-  // Rola o container para o topo
-  const scrollArea = document.getElementById('print-modal-scroll');
-  if (scrollArea) scrollArea.scrollTop = 0;
-
-  // Renderiza o mapa da planta de situação
-  renderPrintCadastreMap(feat);
+    // Renderiza o mapa da planta de situação
+    renderPrintCadastreMap(feat);
+  } catch (err) {
+    console.error("Erro ao emitir Ficha Cadastral (BIC):", err);
+    alert("Erro ao emitir Ficha Cadastral: " + err.message);
+  }
 }
 
 /**
  * Renderiza o mapa cartográfico oficial na folha A4
  */
 function renderPrintCadastreMap(targetFeat) {
-  const container = document.getElementById('print-cadastre-map');
-  if (!container) return;
+  try {
+    const container = document.getElementById('print-cadastre-map');
+    if (!container) return;
 
-  if (AppState.printState && AppState.printState.map) {
-    try {
-      AppState.printState.map.remove();
-    } catch(e) {}
-    AppState.printState.map = null;
-  }
+    if (AppState.printState && AppState.printState.map) {
+      try {
+        AppState.printState.map.remove();
+      } catch(e) {}
+      AppState.printState.map = null;
+    }
 
-  const map = L.map(container, {
-    zoomControl: false,
-    attributionControl: false,
-    dragging: true,
-    scrollWheelZoom: true,
-    doubleClickZoom: true,
-    boxZoom: false
-  });
-
-  AppState.printState = AppState.printState || {};
-  AppState.printState.map = map;
-  AppState.printState.currentFeat = targetFeat;
-  AppState.printState.basemapType = AppState.printState.basemapType || 'carto';
-
-  // Aplica o basemap selecionado
-  applyPrintBasemap(AppState.printState.basemapType);
-
-  const targetBounds = L.geoJSON(targetFeat).getBounds();
-  const searchBounds = targetBounds.pad(1.2);
-
-  // 1. Renderiza Lotes Vizinhos e Confrontantes
-  if (AppState.data.lotes && AppState.data.lotes.features) {
-    const targetInsc = targetFeat.properties ? targetFeat.properties.insc_imob : null;
-    const targetLote = targetFeat.properties ? targetFeat.properties.lote : null;
-    const targetQuadra = targetFeat.properties ? targetFeat.properties.quadra : null;
-
-    const nearbyFeatures = AppState.data.lotes.features.filter(f => {
-      const p = f.properties || {};
-      if (targetInsc && p.insc_imob === targetInsc) return false;
-      if (targetLote && targetQuadra && p.lote === targetLote && p.quadra === targetQuadra) return false;
-      const c = f._center || getGeometryBBoxCenter(f.geometry);
-      return c && searchBounds.contains(c);
+    const map = L.map(container, {
+      zoomControl: false,
+      attributionControl: false,
+      dragging: true,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
+      boxZoom: false
     });
 
-    nearbyFeatures.forEach(f => {
-      const p = f.properties || {};
-      L.geoJSON(f, {
-        interactive: false,
-        style: {
-          color: '#334155',
-          weight: 1.5,
-          opacity: 0.85,
-          fillColor: '#cbd5e1',
-          fillOpacity: 0.25
-        }
-      }).addTo(map);
+    AppState.printState = AppState.printState || {};
+    AppState.printState.map = map;
+    AppState.printState.currentFeat = targetFeat;
+    AppState.printState.basemapType = AppState.printState.basemapType || 'carto';
 
-      // Adiciona o número do lote confrontante
-      const c = f._center || getGeometryBBoxCenter(f.geometry);
-      if (c && p.lote) {
-        const cleanL = String(p.lote).replace(/^0+/, '') || String(p.lote);
-        L.marker(c, {
+    // 1. Enquadra imediatamente a visão nos limites do lote alvo
+    const targetBounds = L.geoJSON(targetFeat).getBounds();
+    map.fitBounds(targetBounds, { padding: [48, 48], maxZoom: 18 });
+
+    // 2. Aplica o basemap selecionado
+    applyPrintBasemap(AppState.printState.basemapType);
+
+    const searchBounds = targetBounds.pad(1.2);
+
+    // 3. Renderiza Lotes Vizinhos e Confrontantes
+    if (AppState.data.lotes && AppState.data.lotes.features) {
+      const targetInsc = targetFeat.properties ? targetFeat.properties.insc_imob : null;
+      const targetLote = targetFeat.properties ? targetFeat.properties.lote : null;
+      const targetQuadra = targetFeat.properties ? targetFeat.properties.quadra : null;
+
+      const nearbyFeatures = AppState.data.lotes.features.filter(f => {
+        const p = f.properties || {};
+        if (targetInsc && p.insc_imob === targetInsc) return false;
+        if (targetLote && targetQuadra && p.lote === targetLote && p.quadra === targetQuadra) return false;
+        const c = toLatLng(f._center) || toLatLng(getGeometryBBoxCenter(f.geometry));
+        return c && searchBounds.contains(c);
+      });
+
+      nearbyFeatures.forEach(f => {
+        const p = f.properties || {};
+        L.geoJSON(f, {
           interactive: false,
-          icon: L.divIcon({
-            className: 'print-neighbor-label',
-            html: `<div class="bic-lot-tag">${cleanL}</div>`,
-            iconSize: [0, 0],
-            iconAnchor: [0, 0]
-          })
+          style: {
+            color: '#334155',
+            weight: 1.5,
+            opacity: 0.85,
+            fillColor: '#cbd5e1',
+            fillOpacity: 0.25
+          }
         }).addTo(map);
-      }
-    });
-  }
 
-  // 2. Renderiza Vias Próximas
-  if (AppState.data.vias && AppState.data.vias.features) {
-    AppState.data.vias.features.forEach(v => {
-      L.geoJSON(v, {
-        interactive: false,
-        style: {
-          color: '#0284c7',
-          weight: 2.5,
-          opacity: 0.85,
-          dashArray: '5, 4'
-        }
-      }).addTo(map);
-
-      const vName = v.properties ? (v.properties.nome || v.properties.Nome || v.properties.logradouro || v.properties.Name) : null;
-      if (vName && v.geometry) {
-        const c = getGeometryBBoxCenter(v.geometry);
-        if (c && searchBounds.contains(c)) {
+        // Adiciona o número do lote confrontante
+        const c = toLatLng(f._center) || toLatLng(getGeometryBBoxCenter(f.geometry));
+        if (c && p.lote) {
+          const cleanL = String(p.lote).replace(/^0+/, '') || String(p.lote);
           L.marker(c, {
             interactive: false,
             icon: L.divIcon({
-              className: 'print-street-label',
-              html: `<div class="bic-street-tag"><i class="fa-solid fa-road"></i> ${vName}</div>`,
+              className: 'print-neighbor-label',
+              html: `<div class="bic-lot-tag">${cleanL}</div>`,
               iconSize: [0, 0],
               iconAnchor: [0, 0]
             })
           }).addTo(map);
         }
-      }
-    });
-  }
-
-  // 3. Renderiza o LOTE PRINCIPAL EM DESTAQUE (Alvo da Certidão)
-  L.geoJSON(targetFeat, {
-    interactive: false,
-    style: {
-      color: '#dc2626',      // Vermelho vivo oficial de destaque
-      weight: 3.5,
-      opacity: 1,
-      fillColor: '#fef08a',  // Amarelo solar vivo translúcido
-      fillOpacity: 0.60
+      });
     }
-  }).addTo(map);
 
-  // Marcador central do lote em destaque
-  const tCenter = targetFeat._center || getGeometryBBoxCenter(targetFeat.geometry);
-  if (tCenter) {
-    const targetLoteNum = targetFeat.properties && targetFeat.properties.lote
-      ? (String(targetFeat.properties.lote).replace(/^0+/, '') || String(targetFeat.properties.lote))
-      : '';
-    L.marker(tCenter, {
-      interactive: false,
-      icon: L.divIcon({
-        className: 'print-target-label',
-        html: `<div class="bic-target-tag"><i class="fa-solid fa-location-dot"></i> LOTE ${targetLoteNum}</div>`,
-        iconSize: [0, 0],
-        iconAnchor: [0, 0]
-      })
-    }).addTo(map);
-  }
+    // 4. Renderiza Vias Próximas
+    if (AppState.data.vias && AppState.data.vias.features) {
+      AppState.data.vias.features.forEach(v => {
+        L.geoJSON(v, {
+          interactive: false,
+          style: {
+            color: '#0284c7',
+            weight: 2.5,
+            opacity: 0.85,
+            dashArray: '5, 4'
+          }
+        }).addTo(map);
 
-  // 4. Centróides de quadras próximos
-  if (AppState.data.quadras && AppState.data.quadras.features) {
-    AppState.data.quadras.features.forEach(q => {
-      const qc = q._center || getGeometryBBoxCenter(q.geometry);
-      if (qc && searchBounds.contains(qc)) {
-        const qNum = q.properties ? (q.properties.QUADRA || q.properties.quadra) : null;
-        if (qNum) {
-          const cleanQ = String(qNum).replace(/^0+/, '') || String(qNum);
-          L.marker(qc, {
-            interactive: false,
-            icon: L.divIcon({
-              className: 'cadastral-div-icon',
-              html: `<div class="quadra-centroid-circle" style="transform:translate(-50%,-50%);">${cleanQ}</div>`,
-              iconSize: [0, 0],
-              iconAnchor: [0, 0]
-            })
-          }).addTo(map);
+        const vName = v.properties ? (v.properties.nome || v.properties.Nome || v.properties.logradouro || v.properties.Name) : null;
+        if (vName && v.geometry) {
+          const c = toLatLng(getGeometryBBoxCenter(v.geometry));
+          if (c && searchBounds.contains(c)) {
+            L.marker(c, {
+              interactive: false,
+              icon: L.divIcon({
+                className: 'print-street-label',
+                html: `<div class="bic-street-tag"><i class="fa-solid fa-road"></i> ${vName}</div>`,
+                iconSize: [0, 0],
+                iconAnchor: [0, 0]
+              })
+            }).addTo(map);
+          }
         }
+      });
+    }
+
+    // 5. Renderiza o LOTE PRINCIPAL EM DESTAQUE (Alvo da Certidão)
+    L.geoJSON(targetFeat, {
+      interactive: false,
+      style: {
+        color: '#dc2626',      // Vermelho vivo oficial de destaque
+        weight: 3.5,
+        opacity: 1,
+        fillColor: '#fef08a',  // Amarelo solar vivo translúcido
+        fillOpacity: 0.60
       }
-    });
+    }).addTo(map);
+
+    // Marcador central do lote em destaque
+    const tCenter = toLatLng(targetFeat._center) || toLatLng(getGeometryBBoxCenter(targetFeat.geometry));
+    if (tCenter) {
+      const targetLoteNum = targetFeat.properties && targetFeat.properties.lote
+        ? (String(targetFeat.properties.lote).replace(/^0+/, '') || String(targetFeat.properties.lote))
+        : '';
+      L.marker(tCenter, {
+        interactive: false,
+        icon: L.divIcon({
+          className: 'print-target-label',
+          html: `<div class="bic-target-tag"><i class="fa-solid fa-location-dot"></i> LOTE ${targetLoteNum}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0]
+        })
+      }).addTo(map);
+    }
+
+    // 6. Centróides de quadras próximos
+    if (AppState.data.quadras && AppState.data.quadras.features) {
+      AppState.data.quadras.features.forEach(q => {
+        const qc = toLatLng(q._center) || toLatLng(getGeometryBBoxCenter(q.geometry));
+        if (qc && searchBounds.contains(qc)) {
+          const qNum = q.properties ? (q.properties.QUADRA || q.properties.quadra) : null;
+          if (qNum) {
+            const cleanQ = String(qNum).replace(/^0+/, '') || String(qNum);
+            L.marker(qc, {
+              interactive: false,
+              icon: L.divIcon({
+                className: 'cadastral-div-icon',
+                html: `<div class="quadra-centroid-circle" style="transform:translate(-50%,-50%);">${cleanQ}</div>`,
+                iconSize: [0, 0],
+                iconAnchor: [0, 0]
+              })
+            }).addTo(map);
+          }
+        }
+      });
+    }
+
+    // Escala métrica no mapa
+    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+
+    setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 250);
+  } catch (err) {
+    console.error("Erro ao renderizar mapa da Ficha Cadastral:", err);
   }
-
-  // Escala métrica no mapa
-  L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
-
-  // Enquadramento no lote do imóvel com margem suave
-  map.fitBounds(targetBounds, { padding: [48, 48], maxZoom: 18 });
-
-  setTimeout(() => {
-    if (map) map.invalidateSize();
-  }, 250);
 }
 
 /**
@@ -3206,10 +3234,6 @@ function applyPrintBasemap(type) {
       subdomains: 'abcd',
       maxZoom: 20
     }).addTo(map);
-  }
-
-  if (AppState.printState.basemapLayer.bringToBack) {
-    AppState.printState.basemapLayer.bringToBack();
   }
 }
 
@@ -3254,4 +3278,5 @@ window.openPrintCadastreSheet = openPrintCadastreSheet;
 window.closeCadastrePrintModal = closeCadastrePrintModal;
 window.switchPrintBasemap = switchPrintBasemap;
 window.printCadastreDocument = printCadastreDocument;
+
 
