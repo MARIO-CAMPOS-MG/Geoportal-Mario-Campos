@@ -2704,6 +2704,7 @@ function openPrintCadastreSheet(featInput) {
     const quadra = p.quadra ? String(p.quadra).replace(/\.$/, '').replace(/^0+/, '') || String(p.quadra).replace(/\.$/, '') : '-';
     const bairro = p.nome_bairro || (p.bairro_pasta ? p.bairro_pasta.replace(/^\d+_/, '') : 'MÁRIO CAMPOS');
     const cleanInsc = p.insc_imob ? String(p.insc_imob).replace(/\.{2,}/g, '.') : 'Não cadastrada';
+    const bColor = getBairroColor(p.bairro_pasta || p.nome_bairro) || '#0284c7';
 
     const rawCenter = feat._center || getGeometryBBoxCenter(feat.geometry);
     const center = toLatLng(rawCenter) || AppState.map.getCenter();
@@ -2793,7 +2794,6 @@ function openPrintCadastreSheet(featInput) {
             <div class="bic-header-text">
               <div class="bic-gov">ESTADO DE MINAS GERAIS</div>
               <div class="bic-pref">PREFEITURA MUNICIPAL DE MÁRIO CAMPOS</div>
-              <div class="bic-sec">SECRETARIA MUNICIPAL DE OBRAS, REGULAÇÃO URBANA E CADASTRO</div>
               <div class="bic-dept">DIVISÃO DE TRIBUTAÇÃO, FISCALIZAÇÃO E CADASTRO TÉCNICO IMOBILIÁRIO (CTI)</div>
             </div>
           </div>
@@ -2922,12 +2922,17 @@ function openPrintCadastreSheet(featInput) {
         <!-- SEÇÃO 4: PLANTA DE SITUAÇÃO CADASTRAL -->
         <div class="bic-section" style="margin-bottom:4px;">
           <div class="bic-section-title" style="display:flex;justify-content:space-between;align-items:center;">
-            <span><i class="fa-solid fa-map-location-dot"></i> 4. PLANTA DE SITUAÇÃO CADASTRAL E LOCALIZAÇÃO ESPACIAL</span>
-            <span style="font-size:0.6rem;font-weight:600;color:#64748b;text-transform:none;">Enquadramento Oficial do Imóvel</span>
+            <span><i class="fa-solid fa-map-location-dot"></i> 4. PLANTA DE SITUAÇÃO CADASTRAL (MAPA DO BAIRRO)</span>
+            <span style="font-size:0.6rem;font-weight:600;color:#64748b;text-transform:none;">Mapeamento Completo do Bairro com Lote em Destaque</span>
           </div>
           <div class="bic-map-wrapper">
             <div id="print-cadastre-map" class="bic-map-container"></div>
-            
+
+            <!-- BADGE DO BAIRRO E LOTE -->
+            <div class="bic-map-bairro-badge">
+              <i class="fa-solid fa-map"></i> <span><b>Bairro:</b> ${bairro} &bull; <b>Quadra:</b> ${quadra} &bull; <b>Lote:</b> ${lote}</span>
+            </div>
+
             <!-- INDICADOR DO NORTE -->
             <div class="bic-map-compass" title="Norte Geográfico">
               <div class="compass-n">N</div>
@@ -2937,9 +2942,9 @@ function openPrintCadastreSheet(featInput) {
             <!-- LEGENDA INTEGRADA AO MAPA -->
             <div class="bic-map-legend">
               <div class="legend-item"><span class="legend-swatch lot-target"></span> <b>Lote Objeto (Destaque)</b></div>
-              <div class="legend-item"><span class="legend-swatch lot-neighbor"></span> <b>Lotes Confrontantes</b></div>
-              <div class="legend-item"><span class="legend-swatch street-axis"></span> <b>Eixos de Ruas / Vias</b></div>
-              <div class="legend-item"><span class="legend-swatch quadra-circle">${quadra !== '-' ? quadra : '12'}</span> <b>Quadra</b></div>
+              <div class="legend-item"><span class="legend-swatch" style="background:${bColor};border:1px solid #ffffff;"></span> <b>Lotes do Bairro</b></div>
+              <div class="legend-item"><span class="legend-swatch" style="background:transparent;border:2px dashed ${bColor};"></span> <b>Limite do Bairro</b></div>
+              <div class="legend-item"><span class="legend-swatch quadra-circle">${quadra !== '-' ? quadra : 'Q'}</span> <b>Quadra</b></div>
             </div>
           </div>
         </div>
@@ -2992,8 +2997,7 @@ function openPrintCadastreSheet(featInput) {
             </div>
             <div class="bic-signature-line">
               <div class="sig-line"></div>
-              <div class="sig-name">DIVISÃO DE CADASTRO TÉCNICO</div>
-              <div class="sig-role">Secretaria Municipal de Obras e Regulação</div>
+              <div class="sig-name">ASSINATURA / CARIMBO</div>
             </div>
           </div>
         </div>
@@ -3051,132 +3055,126 @@ function renderPrintCadastreMap(targetFeat) {
     AppState.printState.currentFeat = targetFeat;
     AppState.printState.basemapType = AppState.printState.basemapType || 'carto';
 
-    // 1. Enquadra imediatamente a visão nos limites do lote alvo
-    const targetBounds = L.geoJSON(targetFeat).getBounds();
-    map.fitBounds(targetBounds, { padding: [48, 48], maxZoom: 18 });
+    const targetProps = targetFeat.properties || {};
+    const targetPasta = targetProps.bairro_pasta;
+    const targetNome = (targetProps.nome_bairro || '').toUpperCase().trim();
+    const targetCod = targetProps.bairro_cod ? String(targetProps.bairro_cod).replace(/^0+/, '') : null;
+    const bColor = getBairroColor(targetPasta || targetProps.nome_bairro) || '#0284c7';
 
-    // 2. Aplica o basemap selecionado
+    // 1. Localiza a feição do bairro correspondente na base cartográfica
+    let bairroFeat = null;
+    if (AppState.data.bairros && AppState.data.bairros.features) {
+      bairroFeat = AppState.data.bairros.features.find(b => {
+        const bp = b.properties || {};
+        if (targetPasta && bp.pasta === targetPasta) return true;
+        if (targetNome && (bp.nome || '').toUpperCase().trim() === targetNome) return true;
+        if (targetCod && bp.codigo && String(bp.codigo).replace(/^0+/, '') === targetCod) return true;
+        return false;
+      });
+    }
+
+    // 2. Calcula os limites do lote e do bairro
+    const targetLayer = L.geoJSON(targetFeat);
+    const targetBounds = targetLayer.getBounds();
+
+    let bairroBounds = null;
+    if (bairroFeat) {
+      const bairroLayer = L.geoJSON(bairroFeat);
+      bairroBounds = bairroLayer.getBounds();
+    }
+
+    // Enquadra a visão no mapa do bairro completo
+    if (bairroBounds && bairroBounds.isValid()) {
+      map.fitBounds(bairroBounds, { padding: [14, 14] });
+    } else {
+      map.fitBounds(targetBounds, { padding: [40, 40] });
+    }
+
+    // 3. Aplica o basemap selecionado (Carto ou Satélite)
     applyPrintBasemap(AppState.printState.basemapType);
 
-    const searchBounds = targetBounds.pad(1.2);
+    // 4. Desenha o perímetro do Bairro Completo
+    if (bairroFeat) {
+      L.geoJSON(bairroFeat, {
+        interactive: false,
+        style: {
+          color: bColor,
+          weight: 2.5,
+          dashArray: '6, 5',
+          opacity: 0.95,
+          fillColor: bColor,
+          fillOpacity: 0.04
+        }
+      }).addTo(map);
+    }
 
-    // 3. Renderiza Lotes Vizinhos e Confrontantes
+    // 5. Renderiza todos os lotes do bairro (com perímetro branco e preenchimento na cor do bairro)
+    const targetInsc = targetProps.insc_imob;
+    const targetLote = targetProps.lote;
+    const targetQuadra = targetProps.quadra;
+
     if (AppState.data.lotes && AppState.data.lotes.features) {
-      const targetInsc = targetFeat.properties ? targetFeat.properties.insc_imob : null;
-      const targetLote = targetFeat.properties ? targetFeat.properties.lote : null;
-      const targetQuadra = targetFeat.properties ? targetFeat.properties.quadra : null;
-
-      const nearbyFeatures = AppState.data.lotes.features.filter(f => {
+      const bairroLots = AppState.data.lotes.features.filter(f => {
         const p = f.properties || {};
+        // Não renderizar o lote alvo aqui (ele terá destaque supremo por cima)
         if (targetInsc && p.insc_imob === targetInsc) return false;
         if (targetLote && targetQuadra && p.lote === targetLote && p.quadra === targetQuadra) return false;
-        const c = toLatLng(f._center) || toLatLng(getGeometryBBoxCenter(f.geometry));
-        return c && searchBounds.contains(c);
+
+        if (targetPasta && p.bairro_pasta === targetPasta) return true;
+        if (targetNome && (p.nome_bairro || '').toUpperCase().trim() === targetNome) return true;
+        if (bairroBounds) {
+          const c = toLatLng(f._center) || toLatLng(getGeometryBBoxCenter(f.geometry));
+          return c && bairroBounds.contains(c);
+        }
+        return false;
       });
 
-      nearbyFeatures.forEach(f => {
-        const p = f.properties || {};
+      bairroLots.forEach(f => {
         L.geoJSON(f, {
           interactive: false,
           style: {
-            color: '#334155',
-            weight: 1.5,
-            opacity: 0.85,
-            fillColor: '#cbd5e1',
-            fillOpacity: 0.25
+            color: '#ffffff',
+            weight: 1.0,
+            opacity: 0.95,
+            fillColor: bColor,
+            fillOpacity: 0.45
           }
         }).addTo(map);
+      });
+    }
 
-        // Adiciona o número do lote confrontante
-        const c = toLatLng(f._center) || toLatLng(getGeometryBBoxCenter(f.geometry));
-        if (c && p.lote) {
-          const cleanL = String(p.lote).replace(/^0+/, '') || String(p.lote);
-          L.marker(c, {
+    // 6. Renderiza as Vias / Ruas no âmbito do bairro
+    if (AppState.data.vias && AppState.data.vias.features) {
+      AppState.data.vias.features.forEach(v => {
+        const c = toLatLng(getGeometryBBoxCenter(v.geometry));
+        if (!bairroBounds || (c && bairroBounds.pad(0.08).contains(c))) {
+          L.geoJSON(v, {
             interactive: false,
-            icon: L.divIcon({
-              className: 'print-neighbor-label',
-              html: `<div class="bic-lot-tag">${cleanL}</div>`,
-              iconSize: [0, 0],
-              iconAnchor: [0, 0]
-            })
+            style: {
+              color: '#334155',
+              weight: 1.5,
+              opacity: 0.70
+            }
           }).addTo(map);
         }
       });
     }
 
-    // 4. Renderiza Vias Próximas
-    if (AppState.data.vias && AppState.data.vias.features) {
-      AppState.data.vias.features.forEach(v => {
-        L.geoJSON(v, {
-          interactive: false,
-          style: {
-            color: '#0284c7',
-            weight: 2.5,
-            opacity: 0.85,
-            dashArray: '5, 4'
-          }
-        }).addTo(map);
-
-        const vName = v.properties ? (v.properties.nome || v.properties.Nome || v.properties.logradouro || v.properties.Name) : null;
-        if (vName && v.geometry) {
-          const c = toLatLng(getGeometryBBoxCenter(v.geometry));
-          if (c && searchBounds.contains(c)) {
-            L.marker(c, {
-              interactive: false,
-              icon: L.divIcon({
-                className: 'print-street-label',
-                html: `<div class="bic-street-tag"><i class="fa-solid fa-road"></i> ${vName}</div>`,
-                iconSize: [0, 0],
-                iconAnchor: [0, 0]
-              })
-            }).addTo(map);
-          }
-        }
-      });
-    }
-
-    // 5. Renderiza o LOTE PRINCIPAL EM DESTAQUE (Alvo da Certidão)
-    L.geoJSON(targetFeat, {
-      interactive: false,
-      style: {
-        color: '#dc2626',      // Vermelho vivo oficial de destaque
-        weight: 3.5,
-        opacity: 1,
-        fillColor: '#fef08a',  // Amarelo solar vivo translúcido
-        fillOpacity: 0.60
-      }
-    }).addTo(map);
-
-    // Marcador central do lote em destaque
-    const tCenter = toLatLng(targetFeat._center) || toLatLng(getGeometryBBoxCenter(targetFeat.geometry));
-    if (tCenter) {
-      const targetLoteNum = targetFeat.properties && targetFeat.properties.lote
-        ? (String(targetFeat.properties.lote).replace(/^0+/, '') || String(targetFeat.properties.lote))
-        : '';
-      L.marker(tCenter, {
-        interactive: false,
-        icon: L.divIcon({
-          className: 'print-target-label',
-          html: `<div class="bic-target-tag"><i class="fa-solid fa-location-dot"></i> LOTE ${targetLoteNum}</div>`,
-          iconSize: [0, 0],
-          iconAnchor: [0, 0]
-        })
-      }).addTo(map);
-    }
-
-    // 6. Centróides de quadras próximos
+    // 7. Renderiza Centróides de Quadras no bairro
     if (AppState.data.quadras && AppState.data.quadras.features) {
       AppState.data.quadras.features.forEach(q => {
+        const p = q.properties || {};
+        if (targetPasta && p.pasta && p.pasta !== targetPasta) return;
         const qc = toLatLng(q._center) || toLatLng(getGeometryBBoxCenter(q.geometry));
-        if (qc && searchBounds.contains(qc)) {
-          const qNum = q.properties ? (q.properties.QUADRA || q.properties.quadra) : null;
+        if (qc && (!bairroBounds || bairroBounds.contains(qc))) {
+          const qNum = p.QUADRA || p.quadra;
           if (qNum) {
             const cleanQ = String(qNum).replace(/^0+/, '') || String(qNum);
             L.marker(qc, {
               interactive: false,
               icon: L.divIcon({
                 className: 'cadastral-div-icon',
-                html: `<div class="quadra-centroid-circle" style="transform:translate(-50%,-50%);">${cleanQ}</div>`,
+                html: `<div class="quadra-centroid-circle" style="transform:translate(-50%,-50%);font-size:7.5px;width:15px;height:15px;">${cleanQ}</div>`,
                 iconSize: [0, 0],
                 iconAnchor: [0, 0]
               })
@@ -3186,11 +3184,63 @@ function renderPrintCadastreMap(targetFeat) {
       });
     }
 
-    // Escala métrica no mapa
+    // 8. RENDERIZAÇÃO DO LOTE ALVO ESCOLHIDO COM SUPER DESTAQUE
+    // 8.1. Camada de realce de contraste (halo luminoso branco)
+    L.geoJSON(targetFeat, {
+      interactive: false,
+      style: {
+        color: '#ffffff',
+        weight: 7,
+        opacity: 0.95,
+        fill: false
+      }
+    }).addTo(map);
+
+    // 8.2. Polígono principal do lote em destaque (vermelho vivo e preenchimento amarelo solar vívido)
+    L.geoJSON(targetFeat, {
+      interactive: false,
+      style: {
+        color: '#dc2626',
+        weight: 3.5,
+        opacity: 1,
+        fillColor: '#fef08a',
+        fillOpacity: 0.95
+      }
+    }).addTo(map);
+
+    // 8.3. Marcador / Pin flutuante com indicação clara do lote no mapa do bairro
+    const tCenter = toLatLng(targetFeat._center) || toLatLng(getGeometryBBoxCenter(targetFeat.geometry));
+    if (tCenter) {
+      const targetLoteNum = targetProps.lote
+        ? (String(targetProps.lote).replace(/\.$/, '').replace(/^0+/, '') || String(targetProps.lote).replace(/\.$/, ''))
+        : '';
+      L.marker(tCenter, {
+        interactive: false,
+        icon: L.divIcon({
+          className: 'bic-target-callout-wrapper',
+          html: `
+            <div class="bic-target-callout">
+              <div class="callout-tag"><i class="fa-solid fa-location-dot"></i> LOTE ${targetLoteNum}</div>
+              <div class="callout-pointer"></div>
+              <div class="callout-dot"></div>
+            </div>
+          `,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0]
+        })
+      }).addTo(map);
+    }
+
+    // Escala métrica no mapa (canto inferior esquerdo)
     L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
 
     setTimeout(() => {
-      if (map) map.invalidateSize();
+      if (map) {
+        map.invalidateSize();
+        if (bairroBounds && bairroBounds.isValid()) {
+          map.fitBounds(bairroBounds, { padding: [14, 14] });
+        }
+      }
     }, 250);
   } catch (err) {
     console.error("Erro ao renderizar mapa da Ficha Cadastral:", err);
