@@ -2533,17 +2533,50 @@ body.swipe-dragging * {
 }
 
 /* Rótulos Customizados no Mapa do BIC */
-.bic-lot-tag {
-  background: rgba(255, 255, 255, 0.92);
+.bic-lot-divicon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.bic-lot-num-clean {
+  display: inline-block;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
   color: #0f172a;
-  border: 1px solid #64748b;
-  font-size: 9px;
+  font-family: inherit;
+  font-size: 8.5px;
   font-weight: 800;
-  padding: 1px 4px;
-  border-radius: 3px;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 
+    -1px -1px 0 #ffffff,
+     1px -1px 0 #ffffff,
+    -1px  1px 0 #ffffff,
+     1px  1px 0 #ffffff,
+     0px  0px 2.5px #ffffff,
+     0px  0px 2.5px #ffffff;
   transform: translate(-50%, -50%);
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  user-select: none;
+}
+
+.bic-lot-tag {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: #0f172a;
+  font-size: 8.5px;
+  font-weight: 800;
+  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 2.5px #fff;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .bic-target-tag {
