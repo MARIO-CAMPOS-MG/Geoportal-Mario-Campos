@@ -2774,17 +2774,6 @@ function updateBicStreetLabels(roadName, point) {
   if (sec1StreetEl) {
     sec1StreetEl.textContent = roadName;
   }
-  const mapStreetTextEl = document.getElementById('bic-map-street-text');
-  if (mapStreetTextEl) {
-    mapStreetTextEl.textContent = roadName;
-  }
-  if (AppState.printState && AppState.printState.streetMarker) {
-    const iconEl = AppState.printState.streetMarker.getElement();
-    if (iconEl) {
-      const span = iconEl.querySelector('#bic-map-street-text');
-      if (span) span.textContent = roadName;
-    }
-  }
 }
 
 /**
@@ -3064,7 +3053,7 @@ function openPrintCadastreSheet(featInput) {
             <div class="bic-map-legend">
               <div class="legend-item"><span class="legend-swatch lot-target"></span> <b>Lote Objeto (Destaque)</b></div>
               <div class="legend-item"><span class="legend-swatch lot-neighbor"></span> <b>Lotes do Bairro (Cinza)</b></div>
-              <div class="legend-item"><span class="legend-swatch street-axis"></span> <b>Rua de Divisa / Vias</b></div>
+              <div class="legend-item"><span class="legend-swatch street-axis"></span> <b>Eixos Viários</b></div>
               <div class="legend-item"><span class="legend-swatch quadra-circle">${quadra !== '-' ? quadra : 'Q'}</span> <b>Quadra</b></div>
             </div>
           </div>
@@ -3333,23 +3322,7 @@ function renderPrintCadastreMap(targetFeat, frontingInfo) {
       });
     }
 
-    // 7. Rótulo da rua / logradouro para onde o lote faz divisa (frente do imóvel)
-    const streetPt = (frontingInfo && frontingInfo.point) ? frontingInfo.point : null;
-    const initialStreetName = (frontingInfo && frontingInfo.roadName) ? frontingInfo.roadName : 'Rua de Divisa';
-    if (streetPt) {
-      const streetMarker = L.marker(streetPt, {
-        interactive: false,
-        icon: L.divIcon({
-          className: 'print-street-label',
-          html: `<div class="bic-street-tag confrontante-rua" id="bic-map-street-tag"><i class="fa-solid fa-road"></i> <span id="bic-map-street-text">${initialStreetName}</span></div>`,
-          iconSize: [0, 0],
-          iconAnchor: [0, 0]
-        })
-      }).addTo(map);
-      AppState.printState.streetMarker = streetMarker;
-    }
-
-    // 8. Centróides de quadras do bairro
+    // 7. Centróides de quadras do bairro
     if (AppState.data.quadras && AppState.data.quadras.features) {
       AppState.data.quadras.features.forEach(q => {
         const qc = toLatLng(q._center) || toLatLng(getGeometryBBoxCenter(q.geometry));
@@ -3371,8 +3344,8 @@ function renderPrintCadastreMap(targetFeat, frontingInfo) {
       });
     }
 
-    // 9. LOTE PRINCIPAL CENTRALIZADO COM DESTAQUE COLORIDO
-    // 9.1. Halo de contraste branco
+    // 8. LOTE PRINCIPAL CENTRALIZADO COM DESTAQUE COLORIDO
+    // 8.1. Halo de contraste branco
     L.geoJSON(targetFeat, {
       interactive: false,
       style: {
@@ -3383,7 +3356,7 @@ function renderPrintCadastreMap(targetFeat, frontingInfo) {
       }
     }).addTo(map);
 
-    // 9.2. Polígono principal do lote em destaque colorido (borda vermelho vivo e preenchimento amarelo solar vívido)
+    // 8.2. Polígono principal do lote em destaque colorido (borda vermelho vivo e preenchimento amarelo solar vívido)
     L.geoJSON(targetFeat, {
       interactive: false,
       style: {
@@ -3395,7 +3368,7 @@ function renderPrintCadastreMap(targetFeat, frontingInfo) {
       }
     }).addTo(map);
 
-    // 9.3. Marcador / Pin flutuante com indicação clara do lote no centro do mapa
+    // 8.3. Número do lote selecionado destacado no centro do lote (sem a palavra "LOTE" e sem o pin flutuante)
     if (tCenter) {
       const targetLoteNum = targetProps.lote
         ? (String(targetProps.lote).replace(/\.$/, '').replace(/^0+/, '') || String(targetProps.lote).replace(/\.$/, ''))
@@ -3403,14 +3376,8 @@ function renderPrintCadastreMap(targetFeat, frontingInfo) {
       L.marker(tCenter, {
         interactive: false,
         icon: L.divIcon({
-          className: 'bic-target-callout-wrapper',
-          html: `
-            <div class="bic-target-callout">
-              <div class="callout-tag"><i class="fa-solid fa-location-dot"></i> LOTE ${targetLoteNum}</div>
-              <div class="callout-pointer"></div>
-              <div class="callout-dot"></div>
-            </div>
-          `,
+          className: 'bic-target-num-wrapper',
+          html: `<div class="bic-target-num-badge">${targetLoteNum}</div>`,
           iconSize: [0, 0],
           iconAnchor: [0, 0]
         })

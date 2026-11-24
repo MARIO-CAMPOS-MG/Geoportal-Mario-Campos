@@ -2579,6 +2579,36 @@ body.swipe-dragging * {
   pointer-events: none;
 }
 
+/* Número do Lote Selecionado Destacado (sem a palavra "Lote" e sem o pin flutuante) */
+.bic-target-num-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.bic-target-num-badge {
+  background: #dc2626;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 2px 7px;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
 .bic-target-tag {
   background: #dc2626;
   color: #ffffff;
