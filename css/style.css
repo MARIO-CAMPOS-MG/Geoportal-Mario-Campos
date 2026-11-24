@@ -2055,7 +2055,7 @@ body.swipe-dragging * {
   width: 210mm;
   min-height: 297mm;
   box-sizing: border-box;
-  padding: 10mm 12mm 8mm 12mm;
+  padding: 8mm 10mm 6mm 10mm;
   border-radius: 4px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
   color: #0f172a;
@@ -2395,7 +2395,7 @@ body.swipe-dragging * {
 .bic-map-wrapper {
   position: relative;
   width: 100%;
-  height: 290px;
+  height: 280px;
   border: 1.5px solid #0f172a;
   border-radius: 4px;
   overflow: hidden;
@@ -2809,94 +2809,170 @@ body.swipe-dragging * {
 
 /* =======================================================
    REGRAS DE IMPRESSÃO A4 (PDF / IMPRESSORA)
+   Garante saída 100% idêntica à visualização em tela
    ======================================================= */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 6mm 8mm;
+    margin: 0mm; /* Elimina margens extras e cabeçalhos automáticos do navegador */
   }
 
-  html, body {
-    background: #ffffff !important;
-    color: #000000 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
+  /* Forçar preservação de cores, fundos e vetores em todos os navegadores */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
-  /* Ocultar todos os elementos exceto a folha de impressão */
-  body * {
-    visibility: hidden;
-  }
-
-  #cadastre-print-modal,
-  #cadastre-print-modal * {
-    visibility: visible;
-  }
-
+  /* Oculta todos os elementos fora do modal de impressão do BIC */
+  body > *:not(#cadastre-print-modal),
+  header,
+  .header,
+  .main-layout,
+  #modal-dashboard,
+  #streetview-modal,
+  .map-toolbar,
+  .basemap-switcher,
+  .print-modal-backdrop,
   .no-print,
-  .no-print * {
+  .print-modal-toolbar,
+  .leaflet-control-zoom,
+  .leaflet-control-attribution {
     display: none !important;
     visibility: hidden !important;
   }
 
+  html, body {
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: hidden !important;
+  }
+
   #cadastre-print-modal {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    background: transparent !important;
+    position: static !important;
+    display: block !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
-    overflow: visible !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
   }
 
   .print-modal-dialog {
     position: static !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
-    background: transparent !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    overflow: visible !important;
     border: none !important;
+    overflow: hidden !important;
     display: block !important;
   }
 
   .print-modal-scroll {
     position: static !important;
-    background: transparent !important;
-    padding: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    min-height: 297mm !important;
     margin: 0 !important;
-    overflow: visible !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
     display: block !important;
   }
 
   .cadastre-sheet {
-    position: static !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: auto !important;
+    box-sizing: border-box !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    min-height: 297mm !important;
+    margin: 0 auto !important;
+    padding: 8mm 10mm 6mm 10mm !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    page-break-after: avoid !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
     page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-inside: avoid !important;
+    break-before: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .bic-container {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
+  .bic-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 5px !important;
   }
 
   .bic-map-wrapper {
-    height: 290px !important;
+    height: 280px !important;
+    max-height: 280px !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  #print-cadastre-map {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Assegura renderização exata de imagens, tiles cartográficos e vetores do Leaflet */
+  .leaflet-pane,
+  .leaflet-tile,
+  .leaflet-marker-icon,
+  .leaflet-tile-container,
+  .leaflet-zoom-animated,
+  .leaflet-image-layer,
+  .leaflet-layer,
+  .leaflet-pane > svg,
+  .leaflet-pane > svg path {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Rótulos e destaques no mapa da folha */
+  .bic-target-num-badge,
+  .bic-lot-num-clean,
+  .quadra-centroid-circle,
+  .bic-map-bairro-badge,
+  .bic-map-compass,
+  .bic-map-legend {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }

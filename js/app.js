@@ -2481,7 +2481,7 @@ function initUIControls() {
   });
 
   document.getElementById('tool-print').addEventListener('click', () => {
-    window.print();
+    handleGlobalPrint();
   });
 
   document.getElementById('btn-header-about').addEventListener('click', () => {
@@ -3473,14 +3473,49 @@ function applyPrintBasemap(type) {
 
 /**
  * Dispara a impressão nativa ou exportação para PDF
+ * Garantindo que a folha seja impressa exatamente conforme demonstrada em tela
  */
 function printCadastreDocument() {
+  const modal = document.getElementById('cadastre-print-modal');
+  if (!modal) return;
+
+  // Garante que o scroll da área de visualização esteja no topo
+  const scrollArea = document.getElementById('print-modal-scroll');
+  if (scrollArea) {
+    scrollArea.scrollTop = 0;
+    scrollArea.scrollLeft = 0;
+  }
+
+  // Sincroniza dimensões do mapa Leaflet para saída gráfica perfeita
   if (AppState.printState && AppState.printState.map) {
     AppState.printState.map.invalidateSize();
+    if (AppState.printState.viewMode === 'lot' && AppState.printState.targetBounds) {
+      AppState.printState.map.fitBounds(AppState.printState.targetBounds, { padding: [60, 60], maxZoom: 18 });
+    } else if (AppState.printState.bairroViewBounds) {
+      AppState.printState.map.fitBounds(AppState.printState.bairroViewBounds, { padding: [15, 15] });
+    }
   }
+
+  // Pequeno timeout para o navegador renderizar todas as camadas e estilos antes de abrir a janela de impressão
   setTimeout(() => {
     window.print();
-  }, 100);
+  }, 200);
+}
+
+/**
+ * Acionador unificado de impressão em qualquer parte do sistema
+ */
+function handleGlobalPrint() {
+  const modal = document.getElementById('cadastre-print-modal');
+  if (modal && modal.style.display !== 'none' && modal.style.display !== '') {
+    printCadastreDocument();
+    return;
+  }
+  if (AppState.currentLotFeature || (AppState.highlightLayer && AppState.highlightLayer.getLayers().length > 0)) {
+    openPrintCadastreSheet();
+    return;
+  }
+  alert("Para emitir o BIC impresso, selecione primeiro um lote no mapa ou realize uma pesquisa de imóvel.");
 }
 
 /**
@@ -3513,5 +3548,6 @@ window.closeCadastrePrintModal = closeCadastrePrintModal;
 window.switchPrintBasemap = switchPrintBasemap;
 window.switchPrintMapView = switchPrintMapView;
 window.printCadastreDocument = printCadastreDocument;
+window.handleGlobalPrint = handleGlobalPrint;
 
 
