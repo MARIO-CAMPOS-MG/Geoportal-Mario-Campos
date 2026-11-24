@@ -2628,6 +2628,32 @@ body.swipe-dragging * {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
+.bic-street-tag.confrontante-rua {
+  background: #0284c7;
+  color: #ffffff;
+  border: 1.5px solid #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2.5px 7px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bic-street-tag.confrontante-rua i {
+  color: #fef08a;
+  font-size: 8.5px;
+}
+
+.bic-via-tag.primary {
+  background: #f0f9ff;
+  border: 1.5px solid #0284c7;
+  color: #0369a1;
+  font-weight: 700;
+}
+
 /* Rodapé Oficial e Assinatura */
 .bic-footer {
   margin-top: auto;

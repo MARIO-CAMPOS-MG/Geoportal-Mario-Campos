@@ -2676,6 +2676,118 @@ function findNearbyStreets(targetFeat, maxDist = 80) {
 }
 
 /**
+ * Localiza a via pública mais próxima com a qual o lote faz divisa / testada
+ */
+function findFrontingStreet(targetFeat) {
+  const rawCenter = targetFeat._center || getGeometryBBoxCenter(targetFeat.geometry);
+  const tLatLng = toLatLng(rawCenter);
+  if (!tLatLng) {
+    return { point: null, roadName: 'Rua de Acesso Local' };
+  }
+
+  let closestPt = null;
+  let minDistance = Infinity;
+  let closestViaFeature = null;
+
+  if (AppState.data.vias && AppState.data.vias.features) {
+    AppState.data.vias.features.forEach(v => {
+      const geom = v.geometry;
+      if (!geom || !geom.coordinates) return;
+
+      const coords = geom.type === 'LineString'
+        ? geom.coordinates
+        : (geom.type === 'MultiLineString' ? geom.coordinates.flat() : []);
+
+      for (let i = 0; i < coords.length; i++) {
+        const pt = coords[i];
+        if (pt && typeof pt[0] === 'number') {
+          const latlng = L.latLng(pt[1], pt[0]);
+          const d = tLatLng.distanceTo(latlng);
+          if (d < minDistance) {
+            minDistance = d;
+            closestPt = latlng;
+            closestViaFeature = v;
+          }
+        }
+      }
+    });
+  }
+
+  let roadName = null;
+  if (closestViaFeature && closestViaFeature.properties) {
+    const p = closestViaFeature.properties;
+    roadName = p.nome || p.Nome || p.logradouro || p.Name || p.rua || p.Rua;
+  }
+
+  const cacheKey = closestPt ? `${closestPt.lat.toFixed(5)},${closestPt.lng.toFixed(5)}` : null;
+  if (!roadName && cacheKey && AppState.streetCache && AppState.streetCache[cacheKey]) {
+    roadName = AppState.streetCache[cacheKey];
+  }
+
+  return {
+    point: closestPt || tLatLng,
+    distance: minDistance,
+    roadName: roadName || 'Rua de Acesso / Divisa Frontal',
+    feature: closestViaFeature
+  };
+}
+
+/**
+ * Consulta assíncrona com cache do nome oficial da rua confrontante
+ */
+function resolveRoadName(targetFeat, frontingInfo) {
+  const queryPt = (frontingInfo && frontingInfo.point) ? frontingInfo.point : (toLatLng(targetFeat._center) || AppState.map.getCenter());
+  if (!queryPt) return;
+
+  const cacheKey = `${queryPt.lat.toFixed(5)},${queryPt.lng.toFixed(5)}`;
+  AppState.streetCache = AppState.streetCache || {};
+
+  if (AppState.streetCache[cacheKey]) {
+    updateBicStreetLabels(AppState.streetCache[cacheKey], queryPt);
+    return;
+  }
+
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${queryPt.lat}&lon=${queryPt.lng}&zoom=18&addressdetails=1`, {
+    headers: { 'Accept': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const addr = data ? data.address : null;
+    const road = addr ? (addr.road || addr.pedestrian || addr.street || addr.footway || addr.suburb) : null;
+    if (road && road.trim()) {
+      const cleanRoad = road.trim();
+      AppState.streetCache[cacheKey] = cleanRoad;
+      updateBicStreetLabels(cleanRoad, queryPt);
+    }
+  })
+  .catch(err => {
+    console.warn("Consulta reversa de logradouro:", err);
+  });
+}
+
+function updateBicStreetLabels(roadName, point) {
+  const streetTextEl = document.getElementById('bic-street-name-text');
+  if (streetTextEl) {
+    streetTextEl.textContent = roadName;
+  }
+  const sec1StreetEl = document.getElementById('bic-sec1-street-text');
+  if (sec1StreetEl) {
+    sec1StreetEl.textContent = roadName;
+  }
+  const mapStreetTextEl = document.getElementById('bic-map-street-text');
+  if (mapStreetTextEl) {
+    mapStreetTextEl.textContent = roadName;
+  }
+  if (AppState.printState && AppState.printState.streetMarker) {
+    const iconEl = AppState.printState.streetMarker.getElement();
+    if (iconEl) {
+      const span = iconEl.querySelector('#bic-map-street-text');
+      if (span) span.textContent = roadName;
+    }
+  }
+}
+
+/**
  * Abre o modal de emissão e impressão do Boletim de Informações Cadastrais (BIC)
  */
 function openPrintCadastreSheet(featInput) {
@@ -2764,13 +2876,18 @@ function openPrintCadastreSheet(featInput) {
       confrontantesHtml = '<li class="bic-empty-msg">Nenhum lote confrontante vizinho registrado na base imediata.</li>';
     }
 
+    // Identificação da Rua de Divisa
+    const frontingInfo = findFrontingStreet(feat);
+
     // Vias de Confrontação
-    const nearbyStreets = findNearbyStreets(feat, 75);
-    let viasHtml = '';
+    const nearbyStreets = findNearbyStreets(feat, 75).filter(s => s !== frontingInfo.roadName);
+    let viasHtml = `
+      <div class="bic-via-tag primary" id="bic-main-street-tag">
+        <i class="fa-solid fa-road"></i> <b>Rua de Divisa / Frente:</b> <span id="bic-street-name-text">${frontingInfo.roadName}</span>
+      </div>
+    `;
     if (nearbyStreets.length > 0) {
-      viasHtml = nearbyStreets.map(st => `<div class="bic-via-tag"><i class="fa-solid fa-road"></i> ${st}</div>`).join('');
-    } else {
-      viasHtml = '<div class="bic-empty-msg"><i class="fa-solid fa-map-pin"></i> Logradouro local de acesso sem denominação oficial registrada na malha.</div>';
+      viasHtml += nearbyStreets.map(st => `<div class="bic-via-tag"><i class="fa-solid fa-road"></i> ${st}</div>`).join('');
     }
 
     // Código de Autenticação / Protocolo Oficial
@@ -2859,13 +2976,17 @@ function openPrintCadastreSheet(featInput) {
               <span class="bic-field-label">MATRÍCULA (CRI)</span>
               <span class="bic-field-val">${p.matricula || 'Não informada'}</span>
             </div>
-            <div class="bic-field">
-              <span class="bic-field-label">ZONEAMENTO URBANO</span>
-              <span class="bic-field-val">${p.zoneamento || 'ZONA PREDOMINANTEMENTE RESIDENCIAL'}</span>
-            </div>
             <div class="bic-field span-2">
               <span class="bic-field-label">TITULAR / RESPONSÁVEL DECLARADO</span>
               <span class="bic-field-val bold">${p.titular || 'PREFEITURA MUNICIPAL / NÃO DECLARADO'}</span>
+            </div>
+            <div class="bic-field span-2" style="background:#f0f9ff;border-color:#bae6fd;">
+              <span class="bic-field-label" style="color:#0369a1;"><i class="fa-solid fa-road"></i> RUA / LOGRADOURO DE DIVISA (FRENTE)</span>
+              <span class="bic-field-val bold" style="color:#0369a1;" id="bic-sec1-street-text">${frontingInfo.roadName}</span>
+            </div>
+            <div class="bic-field">
+              <span class="bic-field-label">ZONEAMENTO URBANO</span>
+              <span class="bic-field-val">${p.zoneamento || 'ZONA PREDOMINANTEMENTE RESIDENCIAL'}</span>
             </div>
           </div>
         </div>
@@ -2922,15 +3043,15 @@ function openPrintCadastreSheet(featInput) {
         <!-- SEÇÃO 4: PLANTA DE SITUAÇÃO CADASTRAL -->
         <div class="bic-section" style="margin-bottom:4px;">
           <div class="bic-section-title" style="display:flex;justify-content:space-between;align-items:center;">
-            <span><i class="fa-solid fa-map-location-dot"></i> 4. PLANTA DE SITUAÇÃO CADASTRAL (MAPA DO BAIRRO)</span>
-            <span style="font-size:0.6rem;font-weight:600;color:#64748b;text-transform:none;">Mapeamento Completo do Bairro com Lote em Destaque</span>
+            <span><i class="fa-solid fa-map-location-dot"></i> 4. PLANTA DE SITUAÇÃO CADASTRAL E LOCALIZAÇÃO ESPACIAL</span>
+            <span style="font-size:0.6rem;font-weight:600;color:#64748b;text-transform:none;">Lote Selecionado Centralizado &bull; Confrontações Imediatas</span>
           </div>
           <div class="bic-map-wrapper">
             <div id="print-cadastre-map" class="bic-map-container"></div>
 
-            <!-- BADGE DO BAIRRO E LOTE -->
+            <!-- BADGE DO LOTE E BAIRRO -->
             <div class="bic-map-bairro-badge">
-              <i class="fa-solid fa-map"></i> <span><b>Bairro:</b> ${bairro} &bull; <b>Quadra:</b> ${quadra} &bull; <b>Lote:</b> ${lote}</span>
+              <i class="fa-solid fa-location-dot"></i> <span><b>Lote:</b> ${lote} &bull; <b>Quadra:</b> ${quadra} &bull; <b>Bairro:</b> ${bairro}</span>
             </div>
 
             <!-- INDICADOR DO NORTE -->
@@ -2942,8 +3063,8 @@ function openPrintCadastreSheet(featInput) {
             <!-- LEGENDA INTEGRADA AO MAPA -->
             <div class="bic-map-legend">
               <div class="legend-item"><span class="legend-swatch lot-target"></span> <b>Lote Objeto (Destaque)</b></div>
-              <div class="legend-item"><span class="legend-swatch" style="background:${bColor};border:1px solid #ffffff;"></span> <b>Lotes do Bairro</b></div>
-              <div class="legend-item"><span class="legend-swatch" style="background:transparent;border:2px dashed ${bColor};"></span> <b>Limite do Bairro</b></div>
+              <div class="legend-item"><span class="legend-swatch lot-neighbor"></span> <b>Lotes ao Redor (Cinza)</b></div>
+              <div class="legend-item"><span class="legend-swatch street-axis"></span> <b>Rua de Divisa / Vias</b></div>
               <div class="legend-item"><span class="legend-swatch quadra-circle">${quadra !== '-' ? quadra : 'Q'}</span> <b>Quadra</b></div>
             </div>
           </div>
@@ -3018,8 +3139,15 @@ function openPrintCadastreSheet(featInput) {
     const scrollArea = document.getElementById('print-modal-scroll');
     if (scrollArea) scrollArea.scrollTop = 0;
 
-    // Renderiza o mapa da planta de situação
-    renderPrintCadastreMap(feat);
+    // Configuração do mapa de impressão: Google Maps Cartográfico como padrão inicial
+    AppState.printState = AppState.printState || {};
+    AppState.printState.basemapType = 'carto';
+
+    // Renderiza o mapa da planta de situação com o lote centralizado e confrontantes
+    renderPrintCadastreMap(feat, frontingInfo);
+
+    // Consulta assíncrona do logradouro oficial de divisa
+    resolveRoadName(feat, frontingInfo);
   } catch (err) {
     console.error("Erro ao emitir Ficha Cadastral (BIC):", err);
     alert("Erro ao emitir Ficha Cadastral: " + err.message);
@@ -3027,9 +3155,9 @@ function openPrintCadastreSheet(featInput) {
 }
 
 /**
- * Renderiza o mapa cartográfico oficial na folha A4
+ * Renderiza o mapa cartográfico oficial na folha A4 com o lote centralizado, lotes ao redor em cinza e rua de divisa
  */
-function renderPrintCadastreMap(targetFeat) {
+function renderPrintCadastreMap(targetFeat, frontingInfo) {
   try {
     const container = document.getElementById('print-cadastre-map');
     if (!container) return;
@@ -3053,128 +3181,114 @@ function renderPrintCadastreMap(targetFeat) {
     AppState.printState = AppState.printState || {};
     AppState.printState.map = map;
     AppState.printState.currentFeat = targetFeat;
+    // O mapa inicial OBRIGATORIAMENTE deve ser o cartográfico do Google Maps
     AppState.printState.basemapType = AppState.printState.basemapType || 'carto';
 
     const targetProps = targetFeat.properties || {};
-    const targetPasta = targetProps.bairro_pasta;
-    const targetNome = (targetProps.nome_bairro || '').toUpperCase().trim();
-    const targetCod = targetProps.bairro_cod ? String(targetProps.bairro_cod).replace(/^0+/, '') : null;
-    const bColor = getBairroColor(targetPasta || targetProps.nome_bairro) || '#0284c7';
-
-    // 1. Localiza a feição do bairro correspondente na base cartográfica
-    let bairroFeat = null;
-    if (AppState.data.bairros && AppState.data.bairros.features) {
-      bairroFeat = AppState.data.bairros.features.find(b => {
-        const bp = b.properties || {};
-        if (targetPasta && bp.pasta === targetPasta) return true;
-        if (targetNome && (bp.nome || '').toUpperCase().trim() === targetNome) return true;
-        if (targetCod && bp.codigo && String(bp.codigo).replace(/^0+/, '') === targetCod) return true;
-        return false;
-      });
-    }
-
-    // 2. Calcula os limites do lote e do bairro
     const targetLayer = L.geoJSON(targetFeat);
     const targetBounds = targetLayer.getBounds();
+    const tCenter = toLatLng(targetFeat._center) || toLatLng(getGeometryBBoxCenter(targetFeat.geometry));
 
-    let bairroBounds = null;
-    if (bairroFeat) {
-      const bairroLayer = L.geoJSON(bairroFeat);
-      bairroBounds = bairroLayer.getBounds();
-    }
+    // 1. Centralização do lote selecionado com enquadramento proporcional
+    map.fitBounds(targetBounds, { padding: [60, 60], maxZoom: 18 });
 
-    // Enquadra a visão no mapa do bairro completo
-    if (bairroBounds && bairroBounds.isValid()) {
-      map.fitBounds(bairroBounds, { padding: [14, 14] });
-    } else {
-      map.fitBounds(targetBounds, { padding: [40, 40] });
-    }
-
-    // 3. Aplica o basemap selecionado (Carto ou Satélite)
+    // 2. Aplica o basemap selecionado (Inicial: Google Maps Cartográfico, 2ª opção: Google Satélite HD)
     applyPrintBasemap(AppState.printState.basemapType);
 
-    // 4. Desenha o perímetro do Bairro Completo
-    if (bairroFeat) {
-      L.geoJSON(bairroFeat, {
-        interactive: false,
-        style: {
-          color: bColor,
-          weight: 2.5,
-          dashArray: '6, 5',
-          opacity: 0.95,
-          fillColor: bColor,
-          fillOpacity: 0.04
-        }
-      }).addTo(map);
-    }
+    const searchBounds = targetBounds.pad(2.2);
 
-    // 5. Renderiza todos os lotes do bairro (com perímetro branco e preenchimento na cor do bairro)
-    const targetInsc = targetProps.insc_imob;
-    const targetLote = targetProps.lote;
-    const targetQuadra = targetProps.quadra;
-
+    // 3. Renderiza os lotes ao redor na cor CINZA mantendo a numeração de cada lote
     if (AppState.data.lotes && AppState.data.lotes.features) {
-      const bairroLots = AppState.data.lotes.features.filter(f => {
+      const targetInsc = targetProps.insc_imob;
+      const targetLote = targetProps.lote;
+      const targetQuadra = targetProps.quadra;
+
+      const nearbyLots = AppState.data.lotes.features.filter(f => {
         const p = f.properties || {};
-        // Não renderizar o lote alvo aqui (ele terá destaque supremo por cima)
         if (targetInsc && p.insc_imob === targetInsc) return false;
         if (targetLote && targetQuadra && p.lote === targetLote && p.quadra === targetQuadra) return false;
-
-        if (targetPasta && p.bairro_pasta === targetPasta) return true;
-        if (targetNome && (p.nome_bairro || '').toUpperCase().trim() === targetNome) return true;
-        if (bairroBounds) {
-          const c = toLatLng(f._center) || toLatLng(getGeometryBBoxCenter(f.geometry));
-          return c && bairroBounds.contains(c);
-        }
-        return false;
+        const c = toLatLng(f._center) || toLatLng(getGeometryBBoxCenter(f.geometry));
+        return c && searchBounds.contains(c);
       });
 
-      bairroLots.forEach(f => {
+      nearbyLots.forEach(f => {
+        const p = f.properties || {};
+        // Lotes ao redor na cor cinza
         L.geoJSON(f, {
           interactive: false,
           style: {
-            color: '#ffffff',
-            weight: 1.0,
-            opacity: 0.95,
-            fillColor: bColor,
+            color: '#475569',        // Contorno cinza ardósia
+            weight: 1.5,
+            opacity: 0.85,
+            fillColor: '#94a3b8',    // Preenchimento cinza
             fillOpacity: 0.45
           }
         }).addTo(map);
+
+        // Identificação do número do lote vizinho
+        const c = toLatLng(f._center) || toLatLng(getGeometryBBoxCenter(f.geometry));
+        if (c && p.lote) {
+          const cleanL = String(p.lote).replace(/\.$/, '').replace(/^0+/, '') || String(p.lote);
+          L.marker(c, {
+            interactive: false,
+            icon: L.divIcon({
+              className: 'print-neighbor-label',
+              html: `<div class="bic-lot-tag">${cleanL}</div>`,
+              iconSize: [0, 0],
+              iconAnchor: [0, 0]
+            })
+          }).addTo(map);
+        }
       });
     }
 
-    // 6. Renderiza as Vias / Ruas no âmbito do bairro
+    // 4. Renderiza os eixos de ruas / vias na vizinhança imediata
     if (AppState.data.vias && AppState.data.vias.features) {
       AppState.data.vias.features.forEach(v => {
         const c = toLatLng(getGeometryBBoxCenter(v.geometry));
-        if (!bairroBounds || (c && bairroBounds.pad(0.08).contains(c))) {
+        if (c && searchBounds.contains(c)) {
           L.geoJSON(v, {
             interactive: false,
             style: {
-              color: '#334155',
-              weight: 1.5,
-              opacity: 0.70
+              color: '#0284c7',
+              weight: 3.5,
+              opacity: 0.85,
+              dashArray: '6, 5'
             }
           }).addTo(map);
         }
       });
     }
 
-    // 7. Renderiza Centróides de Quadras no bairro
+    // 5. Rótulo da rua / logradouro para onde o lote faz divisa
+    const streetPt = (frontingInfo && frontingInfo.point) ? frontingInfo.point : null;
+    const initialStreetName = (frontingInfo && frontingInfo.roadName) ? frontingInfo.roadName : 'Rua de Divisa';
+    if (streetPt) {
+      const streetMarker = L.marker(streetPt, {
+        interactive: false,
+        icon: L.divIcon({
+          className: 'print-street-label',
+          html: `<div class="bic-street-tag confrontante-rua" id="bic-map-street-tag"><i class="fa-solid fa-road"></i> <span id="bic-map-street-text">${initialStreetName}</span></div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0]
+        })
+      }).addTo(map);
+      AppState.printState.streetMarker = streetMarker;
+    }
+
+    // 6. Centróides de quadras na vizinhança
     if (AppState.data.quadras && AppState.data.quadras.features) {
       AppState.data.quadras.features.forEach(q => {
-        const p = q.properties || {};
-        if (targetPasta && p.pasta && p.pasta !== targetPasta) return;
         const qc = toLatLng(q._center) || toLatLng(getGeometryBBoxCenter(q.geometry));
-        if (qc && (!bairroBounds || bairroBounds.contains(qc))) {
-          const qNum = p.QUADRA || p.quadra;
+        if (qc && searchBounds.contains(qc)) {
+          const qNum = q.properties ? (q.properties.QUADRA || q.properties.quadra) : null;
           if (qNum) {
             const cleanQ = String(qNum).replace(/^0+/, '') || String(qNum);
             L.marker(qc, {
               interactive: false,
               icon: L.divIcon({
                 className: 'cadastral-div-icon',
-                html: `<div class="quadra-centroid-circle" style="transform:translate(-50%,-50%);font-size:7.5px;width:15px;height:15px;">${cleanQ}</div>`,
+                html: `<div class="quadra-centroid-circle" style="transform:translate(-50%,-50%);">${cleanQ}</div>`,
                 iconSize: [0, 0],
                 iconAnchor: [0, 0]
               })
@@ -3184,19 +3298,19 @@ function renderPrintCadastreMap(targetFeat) {
       });
     }
 
-    // 8. RENDERIZAÇÃO DO LOTE ALVO ESCOLHIDO COM SUPER DESTAQUE
-    // 8.1. Camada de realce de contraste (halo luminoso branco)
+    // 7. LOTE PRINCIPAL CENTRALIZADO COM DESTAQUE COLORIDO
+    // 7.1. Halo de contraste branco
     L.geoJSON(targetFeat, {
       interactive: false,
       style: {
         color: '#ffffff',
-        weight: 7,
+        weight: 8,
         opacity: 0.95,
         fill: false
       }
     }).addTo(map);
 
-    // 8.2. Polígono principal do lote em destaque (vermelho vivo e preenchimento amarelo solar vívido)
+    // 7.2. Polígono principal do lote em destaque colorido (borda vermelho vivo e preenchimento amarelo solar vívido)
     L.geoJSON(targetFeat, {
       interactive: false,
       style: {
@@ -3204,12 +3318,11 @@ function renderPrintCadastreMap(targetFeat) {
         weight: 3.5,
         opacity: 1,
         fillColor: '#fef08a',
-        fillOpacity: 0.95
+        fillOpacity: 0.85
       }
     }).addTo(map);
 
-    // 8.3. Marcador / Pin flutuante com indicação clara do lote no mapa do bairro
-    const tCenter = toLatLng(targetFeat._center) || toLatLng(getGeometryBBoxCenter(targetFeat.geometry));
+    // 7.3. Marcador / Pin flutuante com indicação clara do lote no centro do mapa
     if (tCenter) {
       const targetLoteNum = targetProps.lote
         ? (String(targetProps.lote).replace(/\.$/, '').replace(/^0+/, '') || String(targetProps.lote).replace(/\.$/, ''))
@@ -3231,15 +3344,14 @@ function renderPrintCadastreMap(targetFeat) {
       }).addTo(map);
     }
 
-    // Escala métrica no mapa (canto inferior esquerdo)
+    // Escala métrica no canto inferior esquerdo
     L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
 
+    // Garante centralização perfeita após abertura do modal
     setTimeout(() => {
       if (map) {
         map.invalidateSize();
-        if (bairroBounds && bairroBounds.isValid()) {
-          map.fitBounds(bairroBounds, { padding: [14, 14] });
-        }
+        map.fitBounds(targetBounds, { padding: [60, 60], maxZoom: 18 });
       }
     }, 250);
   } catch (err) {
@@ -3248,7 +3360,7 @@ function renderPrintCadastreMap(targetFeat) {
 }
 
 /**
- * Alterna entre basemap Cartográfico Oficial e Satélite HD Google para a impressão
+ * Alterna entre Google Maps Cartográfico e Google Satélite HD para a impressão
  */
 function switchPrintBasemap(type) {
   if (!AppState.printState) AppState.printState = {};
@@ -3265,6 +3377,8 @@ function switchPrintBasemap(type) {
 
 /**
  * Aplica o tile layer correspondente no mapa de impressão
+ * Opção 1 (Padrão Inicial): Google Maps Cartográfico Oficial
+ * Opção 2: Google Maps Satélite HD Híbrido
  */
 function applyPrintBasemap(type) {
   if (!AppState.printState || !AppState.printState.map) return;
@@ -3276,13 +3390,20 @@ function applyPrintBasemap(type) {
   }
 
   if (type === 'sat') {
-    AppState.printState.basemapLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-      maxZoom: 20
+    // Opção 2: Google Maps Satélite HD Híbrido (Imagens orbitais com sobreposição de vias e rótulos)
+    AppState.printState.basemapLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      subdomains: '0123',
+      maxNativeZoom: 20,
+      maxZoom: 22,
+      attribution: '&copy; Google'
     }).addTo(map);
   } else {
-    AppState.printState.basemapLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20
+    // Opção 1 (Padrão Inicial): Google Maps Cartográfico Oficial (Ruas, arruamento, numeração e cartografia)
+    AppState.printState.basemapLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      subdomains: '0123',
+      maxNativeZoom: 20,
+      maxZoom: 22,
+      attribution: '&copy; Google Maps'
     }).addTo(map);
   }
 }
