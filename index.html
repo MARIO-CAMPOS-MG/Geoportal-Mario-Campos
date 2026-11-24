@@ -482,22 +482,27 @@
     <main class="map-container">
       <div id="map"></div>
 
-      <!-- SELETOR DE MAPAS DE FUNDO MAIS RECENTES -->
+      <!-- SELETOR DE MAPAS DE FUNDO -->
       <div class="basemap-switcher" id="basemap-switcher">
-        <!-- 1. Google Satélite HD Mais Recente -->
-        <div class="basemap-option active" data-base="google" title="Google Satélite HD Mais Recente (Zoom de Alta Resolução até 22)">
-          <div class="basemap-thumb" style="background-image: url('https://mt1.google.com/vt/lyrs=s&x=6182&y=9082&z=14');"></div>
+        <!-- 1. Google Maps Cartográfico Oficial (Inicial Padrão) -->
+        <div class="basemap-option active" data-base="carto" title="Google Maps Cartográfico Oficial (Arruamento, Bairros e Cartografia Vetorial)">
+          <div class="basemap-thumb" style="background-image: url('https://mt1.google.com/vt/lyrs=m&x=6182&y=9082&z=14');"></div>
+          <span class="basemap-name">Cartográfico</span>
+        </div>
+        <!-- 2. Google Satélite HD Mais Recente -->
+        <div class="basemap-option" data-base="google" title="Google Satélite HD Mais Recente (Zoom de Alta Resolução até 22)">
+          <div class="basemap-thumb" style="background-image: url('https://mt1.google.com/vt/lyrs=y&x=6182&y=9082&z=14');"></div>
           <span class="basemap-name">Google Sat HD</span>
         </div>
-        <!-- 2. Satélite Esri Mais Recente -->
+        <!-- 3. Satélite Esri Mais Recente -->
         <div class="basemap-option" data-base="satellite" title="Esri World Imagery Mais Recente (Mosaico Orbital Global Atualizado)">
           <div class="basemap-thumb" style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/14/9082/6182');"></div>
           <span class="basemap-name">Esri Satélite</span>
         </div>
-        <!-- 3. OpenStreetMap Cartografia Atual -->
-        <div class="basemap-option" data-base="osm" title="Cartografia Urbana Atualizada (OpenStreetMap)">
+        <!-- 4. OpenStreetMap Cartografia Urbana -->
+        <div class="basemap-option" data-base="osm" title="Cartografia Urbana Aberta (OpenStreetMap)">
           <div class="basemap-thumb" style="background-image: url('https://tile.openstreetmap.org/14/6182/9082.png');"></div>
-          <span class="basemap-name">Cartografia</span>
+          <span class="basemap-name">OpenStreetMap</span>
         </div>
       </div>
 

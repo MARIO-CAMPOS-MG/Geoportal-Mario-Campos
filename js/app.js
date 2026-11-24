@@ -105,7 +105,7 @@ const AppState = {
   map: null,
   layers: {},
   layerGroups: {},
-  activeBasemap: 'google',
+  activeBasemap: 'carto',
   selectedBairro: null,
   cadastralLabels: {
     active: true,
@@ -215,24 +215,23 @@ function initMap() {
 }
 
 /* ==========================================================
-   2. TRÊS MAPAS DE FUNDO MAIS RECENTES (BASEMAPS)
+   2. MAPAS DE FUNDO (BASEMAPS)
    ========================================================== */
 function initBasemaps() {
   const basemaps = {
-    google: L.layerGroup([
-      L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-        maxNativeZoom: 20,
-        maxZoom: 22,
-        subdomains: '0123',
-        attribution: '&copy; Google'
-      }),
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-        maxNativeZoom: 19,
-        maxZoom: 22,
-        subdomains: 'abcd',
-        opacity: 0.85
-      })
-    ]),
+    carto: L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      maxNativeZoom: 20,
+      maxZoom: 22,
+      subdomains: '0123',
+      attribution: '&copy; Google Maps'
+    }),
+
+    google: L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      maxNativeZoom: 20,
+      maxZoom: 22,
+      subdomains: '0123',
+      attribution: '&copy; Google'
+    }),
 
     satellite: L.layerGroup([
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -256,7 +255,7 @@ function initBasemaps() {
   };
 
   AppState.basemaps = basemaps;
-  basemaps.google.addTo(AppState.map);
+  basemaps[AppState.activeBasemap].addTo(AppState.map);
 
   document.querySelectorAll('.basemap-option').forEach(el => {
     el.addEventListener('click', () => {
